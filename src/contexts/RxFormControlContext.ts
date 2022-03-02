@@ -1,0 +1,16 @@
+import { createContext, ForwardedRef } from 'react';
+
+
+export type RxFormControlContextType<V = any> = {
+  value: V;
+  ref: ForwardedRef<Element>;
+  valid: boolean;
+  dirty: boolean;
+  touched: boolean;
+  disabled: boolean;
+  cssClasses: string;
+  setValue(value: V): void;
+  markAsTouched(): void;
+};
+
+export const RxFormControlContext = createContext<null | RxFormControlContextType>(null);

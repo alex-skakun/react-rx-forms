@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
-import { RxFormControlError } from './rx-form-control-error';
+import { RxFormControlError } from './RxFormControlError';
+import { RxFormErrors } from './RxFormErrors';
 
 export abstract class RxFormAbstractControl<ValueType> {
   abstract readonly value: ValueType;
@@ -8,8 +9,8 @@ export abstract class RxFormAbstractControl<ValueType> {
   abstract readonly dirty$: Observable<boolean>;
   abstract readonly touched: boolean;
   abstract readonly touched$: Observable<boolean>;
-  abstract readonly error: RxFormControlError;
-  abstract readonly error$: Observable<RxFormControlError>;
+  abstract readonly error: RxFormControlError | RxFormErrors;
+  abstract readonly error$: Observable<RxFormControlError> | Observable<RxFormErrors>;
   abstract readonly valid: boolean;
   abstract readonly valid$: Observable<boolean>;
 
