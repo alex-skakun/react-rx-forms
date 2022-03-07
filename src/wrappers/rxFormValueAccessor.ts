@@ -1,4 +1,4 @@
-import { ForwardedRef, forwardRef, ReactElement, useCallback, useMemo, useState } from 'react';
+import { ForwardedRef, forwardRef, ReactElement, RefAttributes, useCallback, useMemo, useState } from 'react';
 import { useObservable } from 'react-rx-tools';
 import { RxFormControlContextType } from '../contexts';
 import { classNames, isNotEmptyValue } from '../helpers';
@@ -22,18 +22,18 @@ type RxFormStandaloneControlProps<V> = {
   valueChange: (value: V) => void;
 };
 
-type RxFormControlComponent<P, V> = {
-  (props: RxFormControlNameProps & P): ReactElement | null;
-  (props: RxFormSingleControlProps<V> & P): ReactElement | null;
-  (props: RxFormStandaloneControlProps<V> & P): ReactElement | null;
+type RxFormControlComponent<P, V, R> = {
+  (props: RxFormControlNameProps & P & RefAttributes<R>): ReactElement | null;
+  (props: RxFormSingleControlProps<V> & P & RefAttributes<R>): ReactElement | null;
+  (props: RxFormStandaloneControlProps<V> & P & RefAttributes<R>): ReactElement | null;
 };
 
-type RxFormValueAccessorProps<P, V> = P & RxFormStandaloneControlProps<V> & RxFormSingleControlProps<V> & RxFormControlNameProps;
+type ComponentWithRxFormControlContext<P, V, R extends Element> = (props: P, context: RxFormControlContextType<V, R>) => ReactElement;
 
-type ComponentWithRxFormControlContext<P, V> = (props: P, context: RxFormControlContextType<V>) => ReactElement;
-
-export function rxFormValueAccessor<P, V>(component: ComponentWithRxFormControlContext<P, V>): RxFormControlComponent<P, V> {
-  return forwardRef<Element>((props, ref) => {
+export function rxFormValueAccessor<P, V, R extends Element = Element>(
+  component: ComponentWithRxFormControlContext<P, V, R>
+): RxFormControlComponent<P, V, R> {
+  return forwardRef<R>((props, ref) => {
     if (isPropsOfControlName<P>(props)) {
       return renderAsFormControlName(props, component, ref);
     }
@@ -47,7 +47,7 @@ export function rxFormValueAccessor<P, V>(component: ComponentWithRxFormControlC
     }
 
     return null;
-  }) as RxFormControlComponent<P, V>;
+  }) as RxFormControlComponent<P, V, R>;
 }
 
 function isPropsOfControlName<P>(props: any): props is RxFormControlNameProps & P {
@@ -62,10 +62,10 @@ function isPropsOfStandaloneControl<P, V>(props: any): props is RxFormStandalone
   return true;
 }
 
-function renderAsFormControlName<P, V>(
+function renderAsFormControlName<P, V, R extends Element>(
   props: RxFormControlNameProps & P,
-  component: ComponentWithRxFormControlContext<P, V>,
-  ref: ForwardedRef<Element>
+  component: ComponentWithRxFormControlContext<P, V, R>,
+  ref: ForwardedRef<R>
 ): ReactElement | null {
   let { formControlName, disabled, ...restProps } = props;
   let [, group] = useRxFormGroupContext<{ [key: string]: V }>();
@@ -85,10 +85,10 @@ function renderAsFormControlName<P, V>(
   return component(restProps as unknown as P, context);
 }
 
-function renderAsSingleControl<P, V>(
+function renderAsSingleControl<P, V, R extends Element>(
   props: RxFormSingleControlProps<V>,
-  component: ComponentWithRxFormControlContext<P, V>,
-  ref: ForwardedRef<Element>
+  component: ComponentWithRxFormControlContext<P, V, R>,
+  ref: ForwardedRef<R>
 ): ReactElement | null {
   let { formControl: control, disabled, ...restProps } = props;
 
@@ -101,7 +101,7 @@ function renderAsSingleControl<P, V>(
   return component(restProps as unknown as P, context);
 }
 
-function prepareContext<V>(control: RxFormControl<V>, ref: ForwardedRef<Element>, disabled?: boolean): RxFormControlContextType<V> {
+function prepareContext<V, R extends Element>(control: RxFormControl<V>, ref: ForwardedRef<R>, disabled?: boolean): RxFormControlContextType<V, R> {
   let state = useObservable(control.state$)!;
   let setValue = useCallback((value: V) => control.setValue(value), [control]);
   let markAsTouched = useCallback(() => control.markAsTouched(), [control]);
@@ -116,17 +116,17 @@ function prepareContext<V>(control: RxFormControl<V>, ref: ForwardedRef<Element>
   }), [state, disabled, ref]);
 }
 
-function renderAsStandaloneControl<P, V>(
+function renderAsStandaloneControl<P, V, R extends Element>(
   props: RxFormStandaloneControlProps<V>,
-  component: ComponentWithRxFormControlContext<P, V>,
-  ref: ForwardedRef<Element>
+  component: ComponentWithRxFormControlContext<P, V, R>,
+  ref: ForwardedRef<R>
 ): ReactElement | null {
   let { value, disabled, valueChange, ...restProps } = props;
   let [touched, setTouched] = useState(false);
   let markAsTouched = useCallback(() => setTouched(true), []);
   let valid = true;
   let dirty = isNotEmptyValue(value);
-  let context: RxFormControlContextType<V> = useMemo(() => ({
+  let context: RxFormControlContextType<V, R> = useMemo(() => ({
     value,
     touched,
     ref,

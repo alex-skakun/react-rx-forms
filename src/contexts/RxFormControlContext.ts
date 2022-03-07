@@ -1,9 +1,9 @@
 import { createContext, ForwardedRef } from 'react';
 
 
-export type RxFormControlContextType<V = any> = {
+export type RxFormControlContextType<V = any, R extends Element = Element> = {
   value: V;
-  ref: ForwardedRef<Element>;
+  ref: ForwardedRef<R>;
   valid: boolean;
   dirty: boolean;
   touched: boolean;

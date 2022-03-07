@@ -1,29 +1,51 @@
 export function classNames(
-  ...classes: Array<{ [key: string]: unknown } | Array<string> | string | undefined | null>
+  ...args: Array<Record<string, unknown> | Array<string> | string | undefined | null>
 ): string {
-  let uniqueClassNames = classes.reduce<Set<string>>((result, classItem) => {
-    if (typeof classItem === 'string' && classItem) {
-      result.add(classItem);
-      return result;
+  let uniqueClassNames = args.reduce<Set<string>>((results, argument) => {
+    if (argument && typeof argument === 'string') {
+      return handleStringArgument(argument, results);
     }
-    if (Array.isArray(classItem)) {
-      for (const item of classItem) {
-        if (classItem) {
-          result.add(item);
-        }
-      }
-      return result;
+
+    if (Array.isArray(argument)) {
+      return handleArrayArgument(argument, results);
     }
-    if (classItem && typeof classItem === 'object') {
-      for (const [item, value] of Object.entries<unknown>(classItem)) {
-        if (value) {
-          result.add(item);
-        }
-      }
-      return result;
+
+    if (argument && typeof argument === 'object') {
+      handleObjectArgument(argument, results);
     }
-    return result;
+
+    return results;
   }, new Set());
 
   return [...uniqueClassNames].join(' ');
+}
+
+function handleStringArgument(argument: string, results: Set<string>): Set<string> {
+  let cssClasses = argument.split(/\s+/);
+
+  for (const cssClass of cssClasses) {
+    results.add(cssClass);
+  }
+
+  return results;
+}
+
+function handleArrayArgument(argument: Array<string>, results: Set<string>): Set<string> {
+  for (const item of argument) {
+    if (argument) {
+      results.add(item);
+    }
+  }
+
+  return results;
+}
+
+function handleObjectArgument(argument: Record<string, unknown>, results: Set<string>): Set<string> {
+  for (const [cssClass, isAdded] of Object.entries<unknown>(argument)) {
+    if (isAdded) {
+      results.add(cssClass);
+    }
+  }
+
+  return results;
 }

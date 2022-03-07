@@ -1,3 +1,4 @@
+import { RxForm, RxInput, RxSelect, RxTextArea } from './components';
 import {
   createRxFormArray,
   createRxFormControl,
@@ -42,5 +43,9 @@ export {
   useRxFormArray,
   createRxFormArray,
   rxFormValueAccessor,
-  Validators
+  Validators,
+  RxForm,
+  RxInput,
+  RxSelect,
+  RxTextArea
 };
