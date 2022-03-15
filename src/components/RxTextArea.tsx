@@ -7,7 +7,7 @@ type RxTextAreaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value'
 
 export const RxTextArea = rxFormValueAccessor<RxTextAreaProps, string, HTMLTextAreaElement>((props, context) => {
   let { className, onInput, onBlur, ...attrs } = props;
-  let { value, ref, disabled, cssClasses, setValue, markAsTouched } = context;
+  let { model, ref, disabled, cssClasses, setValue, markAsTouched } = context;
   let onInputHandler = useCallback((event: FormEvent<HTMLTextAreaElement>) => {
     setValue(event.currentTarget.value);
     onInput && onInput(event);
@@ -20,7 +20,7 @@ export const RxTextArea = rxFormValueAccessor<RxTextAreaProps, string, HTMLTextA
   return <textarea
     {...attrs}
     ref={ref}
-    value={value}
+    value={model}
     disabled={disabled}
     className={classNames(className, cssClasses)}
     onInput={onInputHandler}

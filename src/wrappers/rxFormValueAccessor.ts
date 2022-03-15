@@ -6,20 +6,20 @@ import { useRxFormGroupContext } from '../hooks';
 import { RxFormControl, RxFormControlState } from '../models';
 
 
-type RxFormControlNameProps = {
+export type RxFormControlNameProps = {
   formControlName: string;
   disabled?: boolean;
 };
 
-type RxFormSingleControlProps<V> = {
+export type RxFormSingleControlProps<V> = {
   formControl: RxFormControl<V>;
   disabled?: boolean;
 };
 
-type RxFormStandaloneControlProps<V> = {
+export type RxFormStandaloneControlProps<V> = {
   disabled?: boolean;
-  value: V;
-  valueChange: (value: V) => void;
+  model: V;
+  modelChange: (value: V) => void;
 };
 
 type RxFormControlComponent<P, V, R> = {
@@ -102,11 +102,12 @@ function renderAsSingleControl<P, V, R extends Element>(
 }
 
 function prepareContext<V, R extends Element>(control: RxFormControl<V>, ref: ForwardedRef<R>, disabled?: boolean): RxFormControlContextType<V, R> {
-  let state = useObservable(control.state$)!;
+  let { value: model, ...state } = useObservable(control.state$)!;
   let setValue = useCallback((value: V) => control.setValue(value), [control]);
   let markAsTouched = useCallback(() => control.markAsTouched(), [control]);
 
   return useMemo(() => ({
+    model,
     ...state,
     ref,
     disabled: !!disabled,
@@ -121,22 +122,22 @@ function renderAsStandaloneControl<P, V, R extends Element>(
   component: ComponentWithRxFormControlContext<P, V, R>,
   ref: ForwardedRef<R>
 ): ReactElement | null {
-  let { value, disabled, valueChange, ...restProps } = props;
+  let { model, disabled, modelChange, ...restProps } = props;
   let [touched, setTouched] = useState(false);
   let markAsTouched = useCallback(() => setTouched(true), []);
   let valid = true;
-  let dirty = isNotEmptyValue(value);
+  let dirty = isNotEmptyValue(model);
   let context: RxFormControlContextType<V, R> = useMemo(() => ({
-    value,
+    model,
     touched,
     ref,
     disabled: !!disabled,
     valid,
     dirty,
     cssClasses: getCssClasses({ valid, dirty, touched }),
-    setValue: valueChange,
+    setValue: modelChange,
     markAsTouched
-  }), [value, touched, disabled, ref]);
+  }), [model, touched, disabled, ref]);
 
   return component(restProps as unknown as P, context);
 }

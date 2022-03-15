@@ -2,7 +2,7 @@ import { createContext, ForwardedRef } from 'react';
 
 
 export type RxFormControlContextType<V = any, R extends Element = Element> = {
-  value: V;
+  model: V;
   ref: ForwardedRef<R>;
   valid: boolean;
   dirty: boolean;

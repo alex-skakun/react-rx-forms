@@ -2,9 +2,9 @@ import { useMemo } from 'react';
 import { RxFormControl, RxFormControlAsyncValidator, RxFormControlValidator } from '../models';
 
 
-type RxFormControlValueOnlyInit<ValueType> = ValueType | [ValueType];
+type RxFormControlValueOnlyInit<ValueType> = ValueType;
 
-type RxFormControlSingleValidatorInit<ValueType> = [ValueType, RxFormControlValidator<ValueType>];
+type RxFormControlSingleValidatorInit<ValueType> = [ValueType, RxFormControlValidator<ValueType>?];
 
 type RxFormControlMultipleValidatorsInit<ValueType> = [ValueType, Array<RxFormControlValidator<ValueType>>];
 
@@ -38,7 +38,7 @@ export function createRxFormControl<ValueType>(controlInit: RxFormControlInit<Va
 }
 
 function getRxFormControlArgs<ValueType>(controlInit: RxFormControlInit<ValueType>): ConstructorParameters<typeof RxFormControl> {
-  if (Array.isArray(controlInit)) {
+  if (Array.isArray(controlInit) && controlInit.length) {
     let [value, validatorsInit, asyncValidatorsInit] = controlInit;
     let validators: Array<RxFormControlValidator<unknown>> = isValidatorsArray(validatorsInit)
       ? validatorsInit
