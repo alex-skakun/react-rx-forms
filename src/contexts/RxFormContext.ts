@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { RxFormGroup, RxFormGroupState } from '../models';
+import { RxFormGroup, RxFormGroupState } from '../core';
 
 
 export type RxFormContextState<GroupType> = RxFormGroupState<GroupType> & { progress: boolean };

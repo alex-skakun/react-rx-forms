@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { RxFormAbstractControl, RxFormGroup, RxFormGroupControls } from '../models';
+import { RxFormAbstractControl, RxFormGroup, RxFormGroupControls } from '../core';
 import { createRxFormControl, RxFormControlInit } from './useRxFormControl';
 
 

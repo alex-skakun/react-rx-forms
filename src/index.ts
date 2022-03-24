@@ -1,4 +1,14 @@
-import { RxForm, RxInput, RxSelect, RxTextArea, RxFormGroupConsumer } from './components';
+import { RxForm, RxFormGroupConsumer, RxInput, RxSelect, RxTextArea } from './components';
+import {
+  RxFormAbstractControl,
+  RxFormArray,
+  RxFormControl,
+  RxFormControlAsyncValidator,
+  RxFormControlError,
+  RxFormControlValidator,
+  RxFormErrors,
+  RxFormGroup
+} from './core';
 import {
   createRxFormArray,
   createRxFormControl,
@@ -10,16 +20,6 @@ import {
   useRxFormControl,
   useRxFormGroup
 } from './hooks';
-import {
-  RxFormAbstractControl,
-  RxFormArray,
-  RxFormControl,
-  RxFormControlAsyncValidator,
-  RxFormControlError,
-  RxFormControlValidator,
-  RxFormErrors,
-  RxFormGroup
-} from './models';
 import { Validators } from './validators';
 import { rxFormValueAccessor } from './wrappers';
 

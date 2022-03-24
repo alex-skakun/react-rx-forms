@@ -1,8 +1,8 @@
 import React, { ReactElement, ReactNode } from 'react';
 import { useObservable } from 'react-rx-tools';
 import { RxFormGroupContext } from '../contexts';
+import { RxFormGroup, RxFormGroupState } from '../core';
 import { useRxFormGroupContext } from '../hooks';
-import { RxFormGroup, RxFormGroupState } from '../models';
 
 
 type RxFormGroupConsumerGroupProps<T> = {

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { RxFormControl, RxFormControlAsyncValidator, RxFormControlValidator } from '../models';
+import { RxFormControl, RxFormControlAsyncValidator, RxFormControlValidator } from '../core';
 
 
 type RxFormControlValueOnlyInit<ValueType> = ValueType;

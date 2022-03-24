@@ -1,9 +1,9 @@
 import { ForwardedRef, forwardRef, ReactElement, RefAttributes, useCallback, useMemo, useState } from 'react';
 import { useObservable } from 'react-rx-tools';
 import { RxFormControlContextType } from '../contexts';
+import { RxFormControl, RxFormControlState } from '../core';
 import { classNames, isNotEmptyValue } from '../helpers';
 import { useRxFormGroupContext } from '../hooks';
-import { RxFormControl, RxFormControlState } from '../models';
 
 
 export type RxFormControlNameProps = {
@@ -101,7 +101,11 @@ function renderAsSingleControl<P, V, R extends Element>(
   return component(restProps as unknown as P, context);
 }
 
-function prepareContext<V, R extends Element>(control: RxFormControl<V>, ref: ForwardedRef<R>, disabled?: boolean): RxFormControlContextType<V, R> {
+function prepareContext<V, R extends Element>(
+  control: RxFormControl<V>,
+  ref: ForwardedRef<R>,
+  disabled?: boolean
+): RxFormControlContextType<V, R> {
   let { value: model, ...state } = useObservable(control.state$)!;
   let setValue = useCallback((value: V) => control.setValue(value), [control]);
   let markAsTouched = useCallback(() => control.markAsTouched(), [control]);

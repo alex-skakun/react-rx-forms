@@ -13,8 +13,8 @@ import React, {
 import { useObservable } from 'react-rx-tools';
 import { Observable, of, Subscription, switchMap, tap } from 'rxjs';
 import { RxFormContext, RxFormContextState } from '../contexts';
+import { RxFormGroup } from '../core';
 import { classNames } from '../helpers';
-import { RxFormGroup } from '../models';
 
 
 type RxFormProps<GroupType = unknown> = Omit<FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> & {

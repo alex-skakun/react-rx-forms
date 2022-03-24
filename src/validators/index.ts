@@ -1,4 +1,4 @@
-import { RxFormControlValidator } from '../models';
+import { RxFormControlValidator } from '../core';
 
 
 /**
