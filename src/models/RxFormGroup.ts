@@ -1,5 +1,5 @@
 import { getCurrentFromObservable } from 'react-rx-tools';
-import { audit, combineLatest, map, Observable, tap } from 'rxjs';
+import { asyncScheduler, audit, combineLatest, map, Observable, scheduled, tap } from 'rxjs';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
 import { RxFormControlError } from './RxFormControlError';
 import { RxFormErrors } from './RxFormErrors';
@@ -86,7 +86,7 @@ export class RxFormGroup<GroupType, FieldName extends keyof GroupType = keyof Gr
     this.state$ = combineLatest([
       this.value$, this.dirty$, this.touched$, this.valid$, this.error$
     ]).pipe(
-      audit(() => Promise.resolve()),
+      audit(() => scheduled([], asyncScheduler)),
       map(([value, dirty, touched, valid, error]): RxFormGroupState<GroupType> => ({
         value, dirty, touched, valid, error
       }))

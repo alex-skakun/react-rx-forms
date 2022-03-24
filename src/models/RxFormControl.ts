@@ -1,4 +1,18 @@
-import { audit, BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable, of, race, startWith, switchMap, tap } from 'rxjs';
+import {
+  asyncScheduler,
+  audit,
+  BehaviorSubject,
+  combineLatest,
+  distinctUntilChanged,
+  map,
+  Observable,
+  of,
+  race,
+  scheduled,
+  startWith,
+  switchMap,
+  tap
+} from 'rxjs';
 import { isNotEmptyValue } from '../helpers';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
 import { RxFormControlAsyncValidator } from './RxFormControlAsyncValidator';
@@ -56,12 +70,14 @@ export class RxFormControl<ValueType> extends RxFormAbstractControl<ValueType> {
       switchMap(() => this.#validatorsSubject),
       map(validators => this.#runValidators(validators)),
       switchMap(syncValidatorsResult => (
-        syncValidatorsResult
-          ? of(syncValidatorsResult)
-          : this.#asyncValidatorsSubject.pipe(
-            switchMap(asyncValidators => this.#runAsyncValidators(asyncValidators)),
-            startWith(syncValidatorsResult)
-          )
+        this.#asyncValidatorsSubject.pipe(
+          switchMap(asyncValidators => (
+            syncValidatorsResult
+              ? of(syncValidatorsResult)
+              : this.#runAsyncValidators(asyncValidators)
+          )),
+          startWith(syncValidatorsResult)
+        )
       )),
       distinctUntilChanged(),
       tap(error => this.#error = error)
@@ -76,7 +92,7 @@ export class RxFormControl<ValueType> extends RxFormAbstractControl<ValueType> {
     this.state$ = combineLatest([
       this.value$, this.dirty$, this.touched$, this.valid$, this.error$
     ]).pipe(
-      audit(() => Promise.resolve()),
+      audit(() => scheduled([], asyncScheduler)),
       map(([value, dirty, touched, valid, error]): RxFormControlState<ValueType> => ({
         value, dirty, touched, valid, error
       }))

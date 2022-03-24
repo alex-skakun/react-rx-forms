@@ -12,7 +12,7 @@ import React, {
 } from 'react';
 import { useObservable } from 'react-rx-tools';
 import { Observable, of, Subscription, switchMap, tap } from 'rxjs';
-import { RxFormGroupContext, RxFormGroupContextState } from '../contexts';
+import { RxFormContext, RxFormContextState } from '../contexts';
 import { classNames } from '../helpers';
 import { RxFormGroup } from '../models';
 
@@ -20,7 +20,7 @@ import { RxFormGroup } from '../models';
 type RxFormProps<GroupType = unknown> = Omit<FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> & {
   group: RxFormGroup<GroupType>;
   children: ReactNode | {
-    (state: RxFormGroupContextState<GroupType>): ReactNode;
+    (state: RxFormContextState<GroupType>): ReactNode;
   };
   onSubmit?(value: GroupType): void | Promise<any> | Observable<any>;
 };
@@ -59,8 +59,10 @@ export const RxForm = forwardRef<HTMLFormElement, RxFormProps>((props, ref) => {
   });
 
   return <form {...attrs} ref={ref} className={classNames(className, cssClasses)} onSubmit={onSubmitHandler}>
-    <RxFormGroupContext.Provider value={[contextState, group]}>
+    <RxFormContext.Provider value={[contextState, group]}>
       {typeof children === 'function' ? children(contextState) : children}
-    </RxFormGroupContext.Provider>
+    </RxFormContext.Provider>
   </form>;
-}) as unknown as (<GroupType>(props: RxFormProps<GroupType> & RefAttributes<HTMLFormElement>) => ReactElement | null);
+}) as unknown as {
+  <GroupType>(props: RxFormProps<GroupType> & RefAttributes<HTMLFormElement>): ReactElement
+};
