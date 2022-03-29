@@ -1,6 +1,6 @@
 import React, { FocusEvent, FormEvent, InputHTMLAttributes, ReactElement, RefAttributes, useCallback } from 'react';
+import { RxFormControlNameProps, RxFormSingleControlProps, RxFormStandaloneControlProps, rxFormValueAccessor } from '../core';
 import { classNames, propsWithDefaults } from '../helpers';
-import { RxFormControlNameProps, RxFormSingleControlProps, RxFormStandaloneControlProps, rxFormValueAccessor } from '../wrappers';
 
 
 type RxInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'disabled'>;

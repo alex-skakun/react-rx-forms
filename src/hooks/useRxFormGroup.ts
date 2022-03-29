@@ -1,30 +1,7 @@
 import { useMemo } from 'react';
-import { RxFormAbstractControl, RxFormGroup, RxFormGroupControls } from '../core';
-import { createRxFormControl, RxFormControlInit } from './useRxFormControl';
+import { createRxFormGroup, RxFormGroup, RxFormGroupInit } from '../core';
 
 
-export type RxFormGroupInit<GroupType, FieldName extends keyof GroupType = keyof GroupType> = {
-  [Property in FieldName]: RxFormControlInit<GroupType[Property]> | RxFormAbstractControl<GroupType[Property]>;
-};
-
-export function useRxFormGroup<GroupType>(formGroupInit: RxFormGroupInit<GroupType>): RxFormGroup<GroupType> {
+export function useRxFormGroup<Group>(formGroupInit: RxFormGroupInit<Group>): RxFormGroup<Group> {
   return useMemo(() => createRxFormGroup(formGroupInit), []);
-}
-
-export function createRxFormGroup<GroupType>(formGroupInit: RxFormGroupInit<GroupType>): RxFormGroup<GroupType> {
-  return new RxFormGroup<GroupType>(createControlsMap(formGroupInit));
-}
-
-function createControlsMap<GroupType, FieldName extends keyof GroupType = keyof GroupType>(
-  formGroupInit: RxFormGroupInit<GroupType>
-): RxFormGroupControls<GroupType> {
-  return Object.entries(formGroupInit).reduce((controls, [controlName, controlInit]) => {
-    if (controlInit instanceof RxFormAbstractControl) {
-      controls[controlName as FieldName] = controlInit;
-    } else {
-      controls[controlName as FieldName] = createRxFormControl(controlInit) as RxFormAbstractControl<GroupType[FieldName]>;
-    }
-
-    return controls;
-  }, {} as RxFormGroupControls<GroupType>);
 }

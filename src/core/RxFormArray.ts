@@ -5,24 +5,24 @@ import { RxFormControlError } from './RxFormControlError';
 import { RxFormErrors } from './RxFormErrors';
 
 
-export type ControlsArray<ValueType, ControlType extends RxFormAbstractControl<ValueType> = RxFormAbstractControl<ValueType>> = Array<ControlType>;
-type ControlsReadonlyArray<ValueType, ControlType extends RxFormAbstractControl<ValueType> = RxFormAbstractControl<ValueType>> = ReadonlyArray<ControlType>;
+export type ControlsArray<Value, Control extends RxFormAbstractControl<Value> = RxFormAbstractControl<Value>> = Array<Control>;
+type ControlsReadonlyArray<Value, Control extends RxFormAbstractControl<Value> = RxFormAbstractControl<Value>> = ReadonlyArray<Control>;
 
-export class RxFormArray<ValueType, ControlType extends RxFormAbstractControl<ValueType> = RxFormAbstractControl<ValueType>> extends RxFormAbstractControl<Array<ValueType>> {
-  readonly #controlsSubject: BehaviorSubject<ControlsArray<ValueType>>;
-  #value: Array<ValueType>;
+export class RxFormArray<Value, Control extends RxFormAbstractControl<Value> = RxFormAbstractControl<Value>> extends RxFormAbstractControl<Array<Value>> {
+  readonly #controlsSubject: BehaviorSubject<ControlsArray<Value>>;
+  #value: Array<Value>;
   #dirty: boolean;
   #touched: boolean;
   #valid: boolean;
-  #error: RxFormErrors<Array<ValueType>>;
+  #error: RxFormErrors<Array<Value>>;
 
-  readonly value$: Observable<Array<ValueType>>;
+  readonly value$: Observable<Array<Value>>;
   readonly dirty$: Observable<boolean>;
   readonly touched$: Observable<boolean>;
   readonly valid$: Observable<boolean>;
-  readonly error$: Observable<RxFormErrors<Array<ValueType>>>;
+  readonly error$: Observable<RxFormErrors<Array<Value>>>;
 
-  constructor(controls: ControlsArray<ValueType>) {
+  constructor(controls: ControlsArray<Value>) {
     super();
 
     this.#controlsSubject = new BehaviorSubject(controls);
@@ -56,9 +56,9 @@ export class RxFormArray<ValueType, ControlType extends RxFormAbstractControl<Va
 
     this.error$ = this.#controlsSubject.pipe(
       switchMap(controls => combineLatest(controls.map(control => control.error$ as Observable<RxFormControlError | RxFormErrors>))),
-      map(errorValues => errorValues.reduce<RxFormErrors<Array<ValueType>>>((errors, controlError, index) => {
+      map(errorValues => errorValues.reduce<RxFormErrors<Array<Value>>>((errors, controlError, index) => {
         if (controlError !== null) {
-          errors = (errors ?? {}) as NonNullable<RxFormErrors<Array<ValueType>>>;
+          errors = (errors ?? {}) as NonNullable<RxFormErrors<Array<Value>>>;
           errors[index] = controlError as NonNullable<RxFormControlError>;
         }
 
@@ -69,7 +69,7 @@ export class RxFormArray<ValueType, ControlType extends RxFormAbstractControl<Va
     this.#error = getCurrentFromObservable(this.error$)!;
   }
 
-  get value(): Array<ValueType> {
+  get value(): Array<Value> {
     return this.#value;
   }
 
@@ -85,11 +85,11 @@ export class RxFormArray<ValueType, ControlType extends RxFormAbstractControl<Va
     return this.#valid;
   }
 
-  get error(): RxFormErrors<Array<ValueType>> {
+  get error(): RxFormErrors<Array<Value>> {
     return this.#error;
   }
 
-  get controls(): ControlsReadonlyArray<ValueType> {
+  get controls(): ControlsReadonlyArray<Value> {
     return this.#controlsSubject.getValue();
   }
 
@@ -111,17 +111,17 @@ export class RxFormArray<ValueType, ControlType extends RxFormAbstractControl<Va
     }
   }
 
-  setValue(value: Array<ValueType>): void {
+  setValue(value: Array<Value>): void {
     for (let [index, itemValue] of value.entries()) {
       this.getControlAt(index).setValue(itemValue);
     }
   }
 
-  getControlAt(position: number): RxFormAbstractControl<ValueType> {
+  getControlAt(position: number): RxFormAbstractControl<Value> {
     return this.controls[position];
   }
 
-  addControl(control: ControlType, position?: number): void {
+  addControl(control: Control, position?: number): void {
     let controlsCopy = this.#controlsSubject.getValue().slice();
 
     if (position === undefined) {
@@ -139,7 +139,7 @@ export class RxFormArray<ValueType, ControlType extends RxFormAbstractControl<Va
     this.#controlsSubject.next(updatedControls);
   }
 
-  removeControl(control: ControlType): void {
+  removeControl(control: Control): void {
     let updatedControls = this.#controlsSubject.getValue().filter(existingControl => existingControl !== control);
 
     this.#controlsSubject.next(updatedControls);

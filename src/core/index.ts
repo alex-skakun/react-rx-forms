@@ -6,3 +6,7 @@ export * from './RxFormControlValidator';
 export * from './RxFormControlAsyncValidator';
 export * from './RxFormGroup';
 export * from './RxFormArray';
+export * from './rxFormValueAccessor';
+export * from './createRxFormControl';
+export * from './createRxFormGroup';
+export * from './createRxFormArray';

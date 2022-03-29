@@ -1,6 +1,6 @@
 import React, { FocusEvent, FormEvent, TextareaHTMLAttributes, useCallback } from 'react';
+import { rxFormValueAccessor } from '../core';
 import { classNames } from '../helpers';
-import { rxFormValueAccessor } from '../wrappers';
 
 
 type RxTextAreaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'disabled'>;

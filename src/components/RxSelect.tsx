@@ -8,8 +8,8 @@ import React, {
   useCallback,
   useEffect
 } from 'react';
+import { RxFormControlNameProps, RxFormSingleControlProps, RxFormStandaloneControlProps, rxFormValueAccessor } from '../core';
 import { classNames, propsWithDefaults } from '../helpers';
-import { RxFormControlNameProps, RxFormSingleControlProps, RxFormStandaloneControlProps, rxFormValueAccessor } from '../wrappers';
 
 
 type RxSelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'value' | 'disabled'>;

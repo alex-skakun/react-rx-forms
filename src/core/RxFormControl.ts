@@ -20,35 +20,35 @@ import { RxFormControlError } from './RxFormControlError';
 import { RxFormControlValidator } from './RxFormControlValidator';
 
 
-export type RxFormControlState<ValueType> = {
-  value: ValueType;
+export type RxFormControlState<Value> = {
+  value: Value;
   dirty: boolean;
   touched: boolean;
   valid: boolean;
   error: RxFormControlError;
 };
 
-export class RxFormControl<ValueType> extends RxFormAbstractControl<ValueType> {
-  #initialValue: ValueType;
+export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
+  #initialValue: Value;
   #dirty: boolean;
   #error: RxFormControlError = null;
   #valid: boolean = true;
-  readonly #validatorsSubject: BehaviorSubject<Array<RxFormControlValidator<ValueType>>>;
-  readonly #asyncValidatorsSubject: BehaviorSubject<Array<RxFormControlAsyncValidator<ValueType>>>;
-  readonly #valueSubject: BehaviorSubject<ValueType>;
+  readonly #validatorsSubject: BehaviorSubject<Array<RxFormControlValidator<Value>>>;
+  readonly #asyncValidatorsSubject: BehaviorSubject<Array<RxFormControlAsyncValidator<Value>>>;
+  readonly #valueSubject: BehaviorSubject<Value>;
   readonly #touchedSubject = new BehaviorSubject<boolean>(false);
 
-  readonly value$: Observable<ValueType>;
+  readonly value$: Observable<Value>;
   readonly dirty$: Observable<boolean>;
   readonly error$: Observable<RxFormControlError>;
   readonly valid$: Observable<boolean>;
-  readonly state$: Observable<RxFormControlState<ValueType>>;
+  readonly state$: Observable<RxFormControlState<Value>>;
   readonly touched$: Observable<boolean> = this.#touchedSubject.pipe(distinctUntilChanged());
 
   constructor(
-    initialValue: ValueType,
-    validators: Array<RxFormControlValidator<ValueType>> = [],
-    asyncValidators: Array<RxFormControlAsyncValidator<ValueType>> = []
+    initialValue: Value,
+    validators: Array<RxFormControlValidator<Value>> = [],
+    asyncValidators: Array<RxFormControlAsyncValidator<Value>> = []
   ) {
     super();
 
@@ -56,7 +56,7 @@ export class RxFormControl<ValueType> extends RxFormAbstractControl<ValueType> {
     this.#validatorsSubject = new BehaviorSubject(validators);
     this.#asyncValidatorsSubject = new BehaviorSubject(asyncValidators);
 
-    this.#valueSubject = new BehaviorSubject<ValueType>(initialValue);
+    this.#valueSubject = new BehaviorSubject<Value>(initialValue);
     this.value$ = this.#valueSubject.pipe(distinctUntilChanged());
 
     this.#dirty = isNotEmptyValue(initialValue);
@@ -93,13 +93,13 @@ export class RxFormControl<ValueType> extends RxFormAbstractControl<ValueType> {
       this.value$, this.dirty$, this.touched$, this.valid$, this.error$
     ]).pipe(
       audit(() => scheduled([], asyncScheduler)),
-      map(([value, dirty, touched, valid, error]): RxFormControlState<ValueType> => ({
+      map(([value, dirty, touched, valid, error]): RxFormControlState<Value> => ({
         value, dirty, touched, valid, error
       }))
     );
   }
 
-  get value(): ValueType {
+  get value(): Value {
     return this.#valueSubject.getValue();
   }
 
@@ -119,19 +119,19 @@ export class RxFormControl<ValueType> extends RxFormAbstractControl<ValueType> {
     return this.#valid;
   }
 
-  get #validators(): Array<RxFormControlValidator<ValueType>> {
+  get #validators(): Array<RxFormControlValidator<Value>> {
     return this.#validatorsSubject.getValue();
   }
 
-  get #asyncValidators(): Array<RxFormControlAsyncValidator<ValueType>> {
+  get #asyncValidators(): Array<RxFormControlAsyncValidator<Value>> {
     return this.#asyncValidatorsSubject.getValue();
   }
 
-  setValue(value: ValueType): void {
+  setValue(value: Value): void {
     this.#valueSubject.next(value);
   }
 
-  reset(initialValue?: ValueType): void {
+  reset(initialValue?: Value): void {
     if (initialValue !== undefined) {
       this.#initialValue = initialValue;
     }
@@ -147,19 +147,19 @@ export class RxFormControl<ValueType> extends RxFormAbstractControl<ValueType> {
     this.#touchedSubject.next(false);
   }
 
-  addValidator(validator: RxFormControlValidator<ValueType>): void {
+  addValidator(validator: RxFormControlValidator<Value>): void {
     this.#validatorsSubject.next(this.#addValidatorIntoCollection(this.#validators, validator));
   }
 
-  removeValidator(validator: RxFormControlValidator<ValueType>): void {
+  removeValidator(validator: RxFormControlValidator<Value>): void {
     this.#validatorsSubject.next(this.#removeValidatorFromCollection(this.#validators, validator));
   }
 
-  addAsyncValidator(validator: RxFormControlAsyncValidator<ValueType>): void {
+  addAsyncValidator(validator: RxFormControlAsyncValidator<Value>): void {
     this.#asyncValidatorsSubject.next(this.#addValidatorIntoCollection(this.#asyncValidators, validator));
   }
 
-  removeAsyncValidator(validator: RxFormControlAsyncValidator<ValueType>): void {
+  removeAsyncValidator(validator: RxFormControlAsyncValidator<Value>): void {
     this.#asyncValidatorsSubject.next(this.#removeValidatorFromCollection(this.#asyncValidators, validator));
   }
 
@@ -174,7 +174,7 @@ export class RxFormControl<ValueType> extends RxFormAbstractControl<ValueType> {
     return collection.filter(existingValidator => existingValidator !== validator);
   }
 
-  #runValidators(validators: Array<RxFormControlValidator<ValueType>>): RxFormControlError {
+  #runValidators(validators: Array<RxFormControlValidator<Value>>): RxFormControlError {
     for (const validator of validators) {
       const validatorResult = validator(this);
 
@@ -186,7 +186,7 @@ export class RxFormControl<ValueType> extends RxFormAbstractControl<ValueType> {
     return null;
   }
 
-  #runAsyncValidators(asyncValidators: Array<RxFormControlAsyncValidator<ValueType>>): Observable<RxFormControlError> {
+  #runAsyncValidators(asyncValidators: Array<RxFormControlAsyncValidator<Value>>): Observable<RxFormControlError> {
     return race(asyncValidators.map(validator => validator(this)));
   }
 

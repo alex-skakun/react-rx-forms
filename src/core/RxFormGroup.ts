@@ -5,45 +5,45 @@ import { RxFormControlError } from './RxFormControlError';
 import { RxFormErrors } from './RxFormErrors';
 
 
-export type RxFormGroupControls<GroupType, FieldName extends keyof GroupType = keyof GroupType> = {
-  [Property in FieldName]: RxFormAbstractControl<GroupType[Property]>
+export type RxFormGroupControls<Group, ControlName extends keyof Group = keyof Group> = {
+  [P in ControlName]: RxFormAbstractControl<Group[P]>
 };
 
-export type RxFormGroupState<GroupType> = {
-  value: GroupType;
+export type RxFormGroupState<Group> = {
+  value: Group;
   dirty: boolean;
   touched: boolean;
   valid: boolean;
-  error: RxFormErrors<GroupType>;
+  error: RxFormErrors<Group>;
 };
 
-export class RxFormGroup<GroupType, FieldName extends keyof GroupType = keyof GroupType> extends RxFormAbstractControl<GroupType> {
-  #initialValue: GroupType;
-  #value: GroupType;
+export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> extends RxFormAbstractControl<Group> {
+  #initialValue: Group;
+  #value: Group;
   #dirty: boolean;
   #touched: boolean;
   #valid: boolean;
-  #error: RxFormErrors<GroupType>;
+  #error: RxFormErrors<Group>;
 
-  readonly value$: Observable<GroupType>;
+  readonly value$: Observable<Group>;
   readonly dirty$: Observable<boolean>;
   readonly touched$: Observable<boolean>;
   readonly valid$: Observable<boolean>;
-  readonly error$: Observable<RxFormErrors<GroupType>>;
-  readonly state$: Observable<RxFormGroupState<GroupType>>;
-  readonly controls: Readonly<RxFormGroupControls<GroupType>>;
+  readonly error$: Observable<RxFormErrors<Group>>;
+  readonly state$: Observable<RxFormGroupState<Group>>;
+  readonly controls: Readonly<RxFormGroupControls<Group>>;
 
-  constructor(controls: RxFormGroupControls<GroupType>) {
+  constructor(controls: RxFormGroupControls<Group>) {
     super();
 
     this.controls = controls;
-    const controlsEntries = Object.entries(controls) as Array<[FieldName, RxFormAbstractControl<GroupType[FieldName]>]>;
+    const controlsEntries = Object.entries(controls) as Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>;
 
     this.value$ = combineLatest(controlsEntries.map(([controlName, control]) => {
       return control.value$.pipe(map(value => [controlName, value]));
     }))
       .pipe(
-        map(entries => Object.fromEntries(entries) as GroupType),
+        map(entries => Object.fromEntries(entries) as Group),
         tap(value => this.#value = value)
       );
     this.#value = getCurrentFromObservable(this.value$)!;
@@ -77,7 +77,7 @@ export class RxFormGroup<GroupType, FieldName extends keyof GroupType = keyof Gr
         map(errorValues => {
           let filteredEntries = errorValues.filter(([, error]) => error !== null);
 
-          return filteredEntries.length ? Object.fromEntries(filteredEntries) as RxFormErrors<GroupType> : null;
+          return filteredEntries.length ? Object.fromEntries(filteredEntries) as RxFormErrors<Group> : null;
         }),
         tap(errors => this.#error = errors)
       );
@@ -87,13 +87,13 @@ export class RxFormGroup<GroupType, FieldName extends keyof GroupType = keyof Gr
       this.value$, this.dirty$, this.touched$, this.valid$, this.error$
     ]).pipe(
       audit(() => scheduled([], asyncScheduler)),
-      map(([value, dirty, touched, valid, error]): RxFormGroupState<GroupType> => ({
+      map(([value, dirty, touched, valid, error]): RxFormGroupState<Group> => ({
         value, dirty, touched, valid, error
       }))
     );
   }
 
-  get value(): GroupType {
+  get value(): Group {
     return this.#value;
   }
 
@@ -109,13 +109,13 @@ export class RxFormGroup<GroupType, FieldName extends keyof GroupType = keyof Gr
     return this.#valid;
   }
 
-  get error(): RxFormErrors<GroupType> {
+  get error(): RxFormErrors<Group> {
     return this.#error;
   }
 
-  * controlsIterator(): IterableIterator<RxFormAbstractControl<GroupType[FieldName]>> {
+  * controlsIterator(): IterableIterator<RxFormAbstractControl<Group[ControlName]>> {
     for (let control of Object.values(this.controls)) {
-      yield control as RxFormAbstractControl<GroupType[FieldName]>;
+      yield control as RxFormAbstractControl<Group[ControlName]>;
     }
   }
 
@@ -131,23 +131,23 @@ export class RxFormGroup<GroupType, FieldName extends keyof GroupType = keyof Gr
     }
   }
 
-  reset(initialValue?: GroupType): void {
+  reset(initialValue?: Group): void {
     if (initialValue !== undefined) {
       this.#initialValue = initialValue;
     }
 
     for (let [controlName, controlValue] of Object.entries(this.#initialValue)) {
-      this.controls[controlName as FieldName].reset(controlValue as GroupType[FieldName]);
+      this.controls[controlName as ControlName].reset(controlValue as Group[ControlName]);
     }
   }
 
-  setValue(value: GroupType): void {
+  setValue(value: Group): void {
     this.patchValue(value);
   }
 
-  patchValue(value: Partial<GroupType>): void {
+  patchValue(value: Partial<Group>): void {
     for (let [controlName, controlValue] of Object.entries(value)) {
-      this.controls[controlName as FieldName].setValue(controlValue as GroupType[FieldName]);
+      this.controls[controlName as ControlName].setValue(controlValue as Group[ControlName]);
     }
   }
 }
