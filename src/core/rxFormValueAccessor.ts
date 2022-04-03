@@ -1,10 +1,11 @@
-import { ForwardedRef, forwardRef, ReactElement, RefAttributes, useCallback, useEffect, useMemo, useState } from 'react';
-import { isDefined, useObservable } from 'react-rx-tools';
+import { ForwardedRef, forwardRef, ReactElement, RefAttributes, RefObject, useCallback, useEffect, useMemo } from 'react';
+import { useObservable } from 'react-rx-tools';
 import { RxFormControlContextType } from '../contexts';
-import { classNames, isNotEmptyValue } from '../helpers';
+import { classNames } from '../helpers';
 import { useRxFormGroupContext } from '../hooks';
 import { Validators } from '../validators';
 import { RxFormControl, RxFormControlState } from './RxFormControl';
+import { RxFormControlError } from './RxFormControlError';
 
 
 export type RxFormControlNameProps = {
@@ -18,9 +19,10 @@ export type RxFormSingleControlProps<Value> = {
 };
 
 export type RxFormStandaloneControlProps<Value> = {
-  disabled?: boolean;
   model: Value;
-  modelChange: (value: Value) => void;
+  modelChange?: (value: Value) => void;
+  onError?: (error: RxFormControlError) => void;
+  disabled?: boolean;
 };
 
 type RxFormControlComponent<Props, Value, Ref> = {
@@ -29,7 +31,10 @@ type RxFormControlComponent<Props, Value, Ref> = {
   (props: RxFormStandaloneControlProps<Value> & Props & RefAttributes<Ref>): ReactElement | null;
 };
 
-type ComponentWithRxFormControlContext<Props, Value, Ref extends Element> = (props: Props, context: RxFormControlContextType<Value, Ref>) => ReactElement;
+type ComponentWithRxFormControlContext<Props, Value, Ref extends Element> = (
+  props: Props,
+  context: RxFormControlContextType<Value, Ref>
+) => ReactElement;
 
 export function rxFormValueAccessor<Props, Value, Ref extends Element = Element>(
   component: ComponentWithRxFormControlContext<Props, Value, Ref>
@@ -102,6 +107,35 @@ function renderAsSingleControl<Props, Value, Ref extends Element>(
   return component(restProps as unknown as Props, context);
 }
 
+function renderAsStandaloneControl<Props, Value, Ref extends Element>(
+  props: RxFormStandaloneControlProps<Value>,
+  component: ComponentWithRxFormControlContext<Props, Value, Ref>,
+  ref: ForwardedRef<Ref>
+): ReactElement | null {
+  let { model, disabled, modelChange, onError, ...restProps } = props;
+  let control = useMemo(() => {
+    return new RxFormControl(model, [Validators.native(() => ref as RefObject<Element>)]);
+  }, []);
+
+  control.setValue(model);
+
+  useEffect(() => {
+    let valueSubscription = control.value$.subscribe(value => modelChange?.(value));
+
+    return () => valueSubscription.unsubscribe();
+  }, [modelChange]);
+
+  useEffect(() => {
+    let errorSubscription = control.error$.subscribe(error => onError?.(error));
+
+    return () => errorSubscription.unsubscribe();
+  }, [onError]);
+
+  let context = prepareContext(control, ref, disabled);
+
+  return component(restProps as unknown as Props, context);
+}
+
 function prepareContext<Value, Ref extends Element>(
   control: RxFormControl<Value>,
   ref: ForwardedRef<Ref>,
@@ -120,27 +154,6 @@ function prepareContext<Value, Ref extends Element>(
     setValue,
     markAsTouched
   }), [state, disabled, ref]);
-}
-
-function renderAsStandaloneControl<Props, Value, Ref extends Element>(
-  props: RxFormStandaloneControlProps<Value>,
-  component: ComponentWithRxFormControlContext<Props, Value, Ref>,
-  ref: ForwardedRef<Ref>
-): ReactElement | null {
-  let { model, disabled, modelChange, ...restProps } = props;
-  let control = useMemo(() => new RxFormControl(model), []);
-
-  control.setValue(model);
-
-  useEffect(() => {
-    let subscription = control.value$.subscribe(modelChange);
-
-    return () => subscription.unsubscribe();
-  }, [modelChange]);
-
-  let context = prepareContext(control, ref, disabled);
-
-  return component(restProps as unknown as Props, context);
 }
 
 function getCssClasses<Value>(controlState: Partial<RxFormControlState<Value>>): string {

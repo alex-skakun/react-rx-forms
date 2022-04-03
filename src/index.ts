@@ -1,4 +1,4 @@
-import { RxForm, RxFormGroupConsumer, RxInput, RxSelect, RxTextArea } from './components';
+import { RxControlError, RxForm, RxFormGroupConsumer, RxInput, RxSelect, RxTextArea } from './components';
 import {
   createRxFormArray,
   createRxFormControl,
@@ -45,5 +45,6 @@ export {
   RxInput,
   RxSelect,
   RxTextArea,
-  RxFormGroupConsumer
+  RxFormGroupConsumer,
+  RxControlError
 };
