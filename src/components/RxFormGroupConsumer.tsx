@@ -39,7 +39,7 @@ function isGroup<T>(props: unknown): props is RxFormGroupConsumerGroupProps<T> {
 }
 
 function renderGroupContext<T>({ group, children }: RxFormGroupConsumerGroupProps<T>): ReactElement | null {
-  let state = useObservable(group.state$)!;
+  const state = useObservable(group.state$)!;
 
   return <RxFormGroupContext.Provider value={[state, group]}>
     {typeof children === 'function' ? children(state, group) : children}
@@ -51,19 +51,19 @@ function isGroupName<T>(props: unknown): props is RxFormGroupConsumerGroupNamePr
 }
 
 function renderGroupNameContext<T>({ groupName, children }: RxFormGroupConsumerGroupNameProps<T>): ReactElement | null {
-  let [, rootGroup] = useRxFormGroupContext<{ [key: string]: RxFormGroup<T> }>();
+  const [, rootGroup] = useRxFormGroupContext<{ [key: string]: RxFormGroup<T> }>();
 
   if (!rootGroup) {
     throw new Error(`RxFormGroupConsumer with property "groupName" may be used only inside RxForm or other RxFormGroupConsumer.`);
   }
 
-  let group = rootGroup.controls[groupName] as unknown as RxFormGroup<T>;
+  const group = rootGroup.controls[groupName] as unknown as RxFormGroup<T>;
 
   if (!(group instanceof RxFormGroup)) {
     throw new Error(`Can't find group by name "${groupName}".`);
   }
 
-  let state = useObservable<RxFormGroupState<T>>(group.state$)!;
+  const state = useObservable<RxFormGroupState<T>>(group.state$)!;
 
   return <RxFormGroupContext.Provider value={[state, group]}>
     {typeof children === 'function' ? children(state, group) : children}

@@ -6,7 +6,7 @@ export default ((length: number) => (control: RxFormControl<string>): RxFormCont
     validatorName: 'minLength',
     details: {
       actualLength: control.value.length,
-      minLength: length
-    }
+      minLength: length,
+    },
   };
 }) as (length: number) => RxFormControlValidator<string>;

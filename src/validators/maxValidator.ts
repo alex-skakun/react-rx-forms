@@ -6,7 +6,7 @@ export default (<T extends number | string>(maxValue: T) => (control: RxFormCont
     validatorName: 'max',
     details: {
       actualValue: control.value,
-      maxValue
-    }
+      maxValue,
+    },
   };
 }) as <T extends number | string>(max: T) => RxFormControlValidator<T>;

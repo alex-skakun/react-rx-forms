@@ -6,7 +6,7 @@ export default (<T extends number | string>(minValue: T) => (control: RxFormCont
     validatorName: 'min',
     details: {
       actualValue: control.value,
-      minValue
-    }
+      minValue,
+    },
   };
 }) as <T extends number | string>(min: T) => RxFormControlValidator<T>;

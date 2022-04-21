@@ -73,20 +73,20 @@ function renderAsFormControlName<Props, Value, Ref extends Element>(
   component: ComponentWithRxFormControlContext<Props, Value, Ref>,
   ref: ForwardedRef<Ref>
 ): ReactElement | null {
-  let { formControlName, disabled, ...restProps } = props;
-  let [, group] = useRxFormGroupContext<{ [key: string]: Value }>();
+  const { formControlName, disabled, ...restProps } = props;
+  const [, group] = useRxFormGroupContext<{ [key: string]: Value }>();
 
   if (!group) {
     throw new Error(`RxFormControl with property "formControlName" may be used only inside RxForm component.`);
   }
 
-  let control = group.controls[formControlName] as RxFormControl<Value>;
+  const control = group.controls[formControlName] as RxFormControl<Value>;
 
   if (!control) {
     throw new Error(`Can't find control by name "${formControlName}".`);
   }
 
-  let context = prepareContext(control, ref, disabled);
+  const context = prepareContext(control, ref, disabled);
 
   return component(restProps as unknown as Props, context);
 }
@@ -96,13 +96,13 @@ function renderAsSingleControl<Props, Value, Ref extends Element>(
   component: ComponentWithRxFormControlContext<Props, Value, Ref>,
   ref: ForwardedRef<Ref>
 ): ReactElement | null {
-  let { formControl: control, disabled, ...restProps } = props;
+  const { formControl: control, disabled, ...restProps } = props;
 
   if (!(control instanceof RxFormControl)) {
     throw new Error(`Incorrect value of property "FormControl", is must be an instance of ${RxFormControl.name}`);
   }
 
-  let context = prepareContext(control, ref, disabled);
+  const context = prepareContext(control, ref, disabled);
 
   return component(restProps as unknown as Props, context);
 }
@@ -112,26 +112,30 @@ function renderAsStandaloneControl<Props, Value, Ref extends Element>(
   component: ComponentWithRxFormControlContext<Props, Value, Ref>,
   ref: ForwardedRef<Ref>
 ): ReactElement | null {
-  let { model, disabled, modelChange, onError, ...restProps } = props;
-  let control = useMemo(() => {
+  const { model, disabled, modelChange, onError, ...restProps } = props;
+  const control = useMemo(() => {
     return new RxFormControl(model, [Validators.native(() => ref as RefObject<Element>)]);
   }, []);
 
   control.setValue(model);
 
   useEffect(() => {
-    let valueSubscription = control.value$.subscribe(value => modelChange?.(value));
+    const valueSubscription = control.value$.subscribe(value => {
+      modelChange && modelChange(value);
+    });
 
     return () => valueSubscription.unsubscribe();
   }, [modelChange]);
 
   useEffect(() => {
-    let errorSubscription = control.error$.subscribe(error => onError?.(error));
+    const errorSubscription = control.error$.subscribe(error => {
+      onError && onError(error);
+    });
 
     return () => errorSubscription.unsubscribe();
   }, [onError]);
 
-  let context = prepareContext(control, ref, disabled);
+  const context = prepareContext(control, ref, disabled);
 
   return component(restProps as unknown as Props, context);
 }
@@ -141,9 +145,10 @@ function prepareContext<Value, Ref extends Element>(
   ref: ForwardedRef<Ref>,
   disabled?: boolean
 ): RxFormControlContextType<Value, Ref> {
-  let { value: model, ...state } = useObservable(control.state$)!;
-  let setValue = useCallback((value: Value) => control.setValue(value), [control]);
-  let markAsTouched = useCallback(() => control.markAsTouched(), [control]);
+  const model = useObservable(control.value$)!;
+  const { value: _value, ...state } = useObservable(control.state$)!;
+  const setModel = useCallback((newModel: Value) => control.setValue(newModel), [control]);
+  const markAsTouched = useCallback(() => control.markAsTouched(), [control]);
 
   return useMemo(() => ({
     model,
@@ -151,9 +156,9 @@ function prepareContext<Value, Ref extends Element>(
     ref,
     disabled: !!disabled,
     cssClasses: getCssClasses(state),
-    setValue,
+    setModel,
     markAsTouched
-  }), [state, disabled, ref]);
+  }), [model, state, disabled, ref]);
 }
 
 function getCssClasses<Value>(controlState: Partial<RxFormControlState<Value>>): string {

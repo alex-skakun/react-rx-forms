@@ -3,14 +3,18 @@ import { RxFormControl, RxFormControlError, RxFormControlValidator } from '../co
 
 
 export default ((getRef: () => RefObject<Element>) => (_control: RxFormControl<any>): RxFormControlError => {
-  let current = getRef().current;
-  let isInput = [HTMLInputElement, HTMLSelectElement, HTMLTextAreaElement].some(Contructor => current instanceof Contructor);
+  const current = getRef().current;
+  const isInput = [
+    HTMLInputElement,
+    HTMLSelectElement,
+    HTMLTextAreaElement,
+  ].some(Contructor => current instanceof Contructor);
 
   if (!isInput) {
     return null;
   }
 
-  let validity = (current as HTMLInputElement).validity;
+  const validity = (current as HTMLInputElement).validity;
 
   if (!validity) {
     return null;
@@ -29,7 +33,7 @@ export default ((getRef: () => RefObject<Element>) => (_control: RxFormControl<a
       tooLong: validity.tooLong,
       tooShort: validity.tooShort,
       typeMismatch: validity.typeMismatch,
-      valueMissing: validity.valueMissing
-    }
+      valueMissing: validity.valueMissing,
+    },
   };
 }) as (getRef: () => RefObject<Element>) => RxFormControlValidator<any>;

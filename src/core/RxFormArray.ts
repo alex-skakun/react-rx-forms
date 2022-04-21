@@ -29,28 +29,28 @@ export class RxFormArray<Value, Control extends RxFormAbstractControl<Value> = R
 
     this.value$ = this.#controlsSubject.pipe(
       switchMap(controls => combineLatest(controls.map(control => control.value$))),
-      tap(value => this.#value = value)
+      tap(value => this.#value = value),
     );
     this.#value = getCurrentFromObservable(this.value$)!;
 
     this.dirty$ = this.#controlsSubject.pipe(
       switchMap(controls => combineLatest(controls.map(control => control.dirty$))),
       map(dirtyValues => dirtyValues.every(Boolean)),
-      tap(dirty => this.#dirty = dirty)
+      tap(dirty => this.#dirty = dirty),
     );
     this.#dirty = getCurrentFromObservable(this.dirty$)!;
 
     this.touched$ = this.#controlsSubject.pipe(
       switchMap(controls => combineLatest(controls.map(control => control.touched$))),
       map(touchedValues => touchedValues.every(Boolean)),
-      tap(touched => this.#touched = touched)
+      tap(touched => this.#touched = touched),
     );
     this.#touched = getCurrentFromObservable(this.touched$)!;
 
     this.valid$ = this.#controlsSubject.pipe(
       switchMap(controls => combineLatest(controls.map(control => control.valid$))),
       map(validValues => validValues.every(Boolean)),
-      tap(valid => this.#valid = valid)
+      tap(valid => this.#valid = valid),
     );
     this.#valid = getCurrentFromObservable(this.valid$)!;
 
@@ -64,7 +64,7 @@ export class RxFormArray<Value, Control extends RxFormAbstractControl<Value> = R
 
         return errors;
       }, null)),
-      tap(errors => this.#error = errors)
+      tap(errors => this.#error = errors),
     );
     this.#error = getCurrentFromObservable(this.error$)!;
   }

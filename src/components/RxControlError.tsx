@@ -40,25 +40,25 @@ function isControlInstanceProps<T>(props: RxControlErrorProps<T>): props is RxCo
 }
 
 function renderAsControlName({ formControlName, children }: RxControlErrorNameProps): ReactElement | null {
-  let [, formGroup] = useRxFormGroupContext<{ [controlName: typeof formControlName]: RxFormControl<unknown> }>();
+  const [, formGroup] = useRxFormGroupContext<{ [controlName: typeof formControlName]: RxFormControl<unknown> }>();
 
   if (!formGroup) {
     throw new Error(`RxControlError with property "formControlName" may be used only inside RxForm or RxFormGroupConsumer.`);
   }
 
-  let formControl = formGroup.controls[formControlName];
+  const formControl = formGroup.controls[formControlName];
 
   if (!(formControl instanceof RxFormControl)) {
     throw new Error(`Can't find control by name "${formControlName}".`);
   }
 
-  let error = useObservable(formControl.error$)!;
+  const error = useObservable(formControl.error$)!;
 
   return <>{children(error)}</>;
 }
 
 function renderAsControlInstance<T>({ formControl, children }: RxControlErrorInstanceProps<T>): ReactElement | null {
-  let error = useObservable(formControl.error$)!;
+  const error = useObservable(formControl.error$)!;
 
   return <>{children(error)}</>;
 }

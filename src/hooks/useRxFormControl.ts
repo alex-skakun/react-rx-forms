@@ -7,7 +7,7 @@ import {
   RxFormControlInit,
   RxFormControlMultipleValidatorsInit,
   RxFormControlSingleValidatorInit,
-  RxFormControlValueOnlyInit
+  RxFormControlValueOnlyInit,
 } from '../core';
 
 

@@ -1,7 +1,7 @@
 export function classNames(
   ...args: Array<Record<string, unknown> | Array<string> | string | undefined | null>
 ): string {
-  let uniqueClassNames = args.reduce<Set<string>>((results, argument) => {
+  const uniqueClassNames = args.reduce<Set<string>>((results, argument) => {
     if (argument && typeof argument === 'string') {
       return handleStringArgument(argument, results);
     }
@@ -21,7 +21,7 @@ export function classNames(
 }
 
 function handleStringArgument(argument: string, results: Set<string>): Set<string> {
-  let cssClasses = argument.split(/\s+/);
+  const cssClasses = argument.split(/\s+/);
 
   for (const cssClass of cssClasses) {
     results.add(cssClass);

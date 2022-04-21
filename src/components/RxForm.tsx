@@ -8,7 +8,7 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useState
+  useState,
 } from 'react';
 import { useObservable } from 'react-rx-tools';
 import { Observable, of, Subscription, switchMap, tap } from 'rxjs';
@@ -18,7 +18,7 @@ import { classNames } from '../helpers';
 
 
 type RxFormProps<GroupType = unknown> = Omit<FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> & {
-  group: RxFormGroup<GroupType>;
+  formGroup: RxFormGroup<GroupType>;
   children: ReactNode | {
     (state: RxFormContextState<GroupType>): ReactNode;
   };
@@ -26,40 +26,36 @@ type RxFormProps<GroupType = unknown> = Omit<FormHTMLAttributes<HTMLFormElement>
 };
 
 export const RxForm = forwardRef<HTMLFormElement, RxFormProps>((props, ref) => {
-  let subscriptions = useMemo(() => ({ progressSubscription: Subscription.EMPTY }), []);
-  let { group, children, className, onSubmit, ...attrs } = props;
-  let [progress, setProgress] = useState(false);
-  let groupState = useObservable(group.state$)!;
-  let contextState = useMemo(() => ({ progress, ...groupState }), [progress, groupState]);
-  let cssClasses = useMemo(() => classNames({
-    'rx-form-valid': groupState!.valid,
-    'rx-form-invalid': !groupState!.valid,
-    'rx-form-dirty': groupState!.dirty,
-    'rx-form-touched': groupState!.touched
+  const subscriptions = useMemo(() => ({ progressSubscription: Subscription.EMPTY }), []);
+  const { formGroup, children, className, onSubmit, ...attrs } = props;
+  const [progress, setProgress] = useState(false);
+  const groupState = useObservable(formGroup.state$)!;
+  const contextState = useMemo(() => ({ progress, ...groupState }), [progress, groupState]);
+  const cssClasses = useMemo(() => classNames({
+    'rx-form-valid': groupState.valid,
+    'rx-form-invalid': !groupState.valid,
+    'rx-form-dirty': groupState.dirty,
+    'rx-form-touched': groupState.touched,
   }), [groupState]);
-  let onSubmitHandler = useCallback((event: FormEvent<HTMLFormElement>) => {
+
+  const onSubmitHandler = useCallback((event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    if (onSubmit) {
-      let submitResult = onSubmit(group.value);
-
-      subscriptions.progressSubscription.unsubscribe();
-      subscriptions.progressSubscription = of(null)
-        .pipe(
-          tap(() => setProgress(true)),
-          switchMap(() => submitResult ?? of(submitResult)),
-          tap(() => setProgress(false))
-        )
-        .subscribe();
-    }
-  }, [onSubmit, group]);
+    subscriptions.progressSubscription.unsubscribe();
+    subscriptions.progressSubscription = of(null)
+      .pipe(
+        tap(() => setProgress(true)),
+        switchMap(() => (onSubmit && onSubmit(formGroup.value)) ?? of(null)),
+        tap(() => setProgress(false)),
+      )
+      .subscribe();
+  }, [onSubmit, formGroup]);
 
   useEffect(() => {
     return () => subscriptions.progressSubscription.unsubscribe();
   });
 
   return <form {...attrs} ref={ref} className={classNames(className, cssClasses)} onSubmit={onSubmitHandler}>
-    <RxFormContext.Provider value={[contextState, group]}>
+    <RxFormContext.Provider value={[contextState, formGroup]}>
       {typeof children === 'function' ? children(contextState) : children}
     </RxFormContext.Provider>
   </form>;

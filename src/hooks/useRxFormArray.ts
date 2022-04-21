@@ -3,7 +3,7 @@ import { createRxFormArray, RxFormAbstractControl, RxFormArray, RxFormArrayInit 
 
 
 export function useRxFormArray<Value, Control extends RxFormAbstractControl<Value> = RxFormAbstractControl<Value>>(
-  formArrayInit: RxFormArrayInit<Value, Control>
+  formArrayInit: RxFormArrayInit<Value, Control>,
 ): RxFormArray<Value, Control> {
   return useMemo(() => createRxFormArray(formArrayInit), []);
 }

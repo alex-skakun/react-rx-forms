@@ -32,11 +32,11 @@ export function createRxFormControl<Value>(controlInit: RxFormControlInit<Value>
 
 function getRxFormControlArgs<Value>(controlInit: RxFormControlInit<Value>): ConstructorParameters<typeof RxFormControl> {
   if (Array.isArray(controlInit) && controlInit.length) {
-    let [value, validatorsInit, asyncValidatorsInit] = controlInit;
-    let validators: Array<RxFormControlValidator<unknown>> = isValidatorsArray(validatorsInit)
+    const [value, validatorsInit, asyncValidatorsInit] = controlInit;
+    const validators: Array<RxFormControlValidator<unknown>> = isValidatorsArray(validatorsInit)
       ? validatorsInit
       : (isValidator(validatorsInit) ? [validatorsInit] : []);
-    let asyncValidators: Array<RxFormControlAsyncValidator<unknown>> = isValidatorsArray(asyncValidatorsInit)
+    const asyncValidators: Array<RxFormControlAsyncValidator<unknown>> = isValidatorsArray(asyncValidatorsInit)
       ? asyncValidatorsInit
       : (isValidator(asyncValidatorsInit) ? [asyncValidatorsInit] : []);
 

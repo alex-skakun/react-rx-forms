@@ -6,43 +6,59 @@ import React, {
   RefAttributes,
   SelectHTMLAttributes,
   useCallback,
-  useEffect
+  useEffect,
+  useImperativeHandle,
+  useRef,
 } from 'react';
-import { RxFormControlNameProps, RxFormSingleControlProps, RxFormStandaloneControlProps, rxFormValueAccessor } from '../core';
+import {
+  RxFormControlNameProps,
+  RxFormSingleControlProps,
+  RxFormStandaloneControlProps,
+  rxFormValueAccessor,
+} from '../core';
 import { classNames, propsWithDefaults } from '../helpers';
 
 
 type RxSelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'value' | 'disabled'>;
 
 export const RxSelect = rxFormValueAccessor<RxSelectProps, string | string[], HTMLSelectElement>((props, context) => {
-  let { multiple, className, onChange, onBlur, children, ...attrs } = propsWithDefaults(props, { multiple: false });
-  let { model, ref, disabled, cssClasses, setValue, markAsTouched } = context;
-  let onChangeHandler = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+  const { multiple, className, onChange, onBlur, children, ...attrs } = propsWithDefaults(props, { multiple: false });
+  const { model, ref, disabled, cssClasses, setModel, markAsTouched } = context;
+  const inputRef = useRef<HTMLSelectElement>(null);
+
+  const onChangeHandler = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
     if (multiple) {
-      setValue(Array.from(event.currentTarget.selectedOptions, option => option.value));
+      setModel(Array.from(event.currentTarget.selectedOptions, option => option.value));
     } else {
-      setValue(event.currentTarget.value);
+      setModel(event.currentTarget.value);
     }
 
     onChange && onChange(event);
-  }, [setValue, onChange]);
-  let onBlurHandler = useCallback((event: FocusEvent<HTMLSelectElement>) => {
+  }, [setModel, onChange]);
+
+  const onBlurHandler = useCallback((event: FocusEvent<HTMLSelectElement>) => {
     markAsTouched();
     onBlur && onBlur(event);
   }, [markAsTouched, onBlur]);
 
   useEffect(() => {
-    let options = (ref as MutableRefObject<HTMLSelectElement>).current.options;
-    let values = new Set<string>(Array.isArray(model) ? model : [model]);
+    if (inputRef) {
+      const options = (inputRef as MutableRefObject<HTMLSelectElement>).current.options;
+      const values = new Set<string>(Array.isArray(model) ? model : [model]);
 
-    for (let option of options) {
-      option.selected = values.has(option.value);
+      for (const option of options) {
+        option.selected = values.has(option.value);
+      }
     }
-  }, [model, ref]);
+  }, [model, inputRef]);
+
+  useImperativeHandle(ref, () => {
+    return inputRef.current!;
+  });
 
   return <select
     {...attrs}
-    ref={ref}
+    ref={inputRef}
     multiple={multiple}
     disabled={disabled}
     className={classNames(className, cssClasses)}

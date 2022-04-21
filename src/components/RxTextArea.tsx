@@ -6,13 +6,15 @@ import { classNames } from '../helpers';
 type RxTextAreaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'disabled'>;
 
 export const RxTextArea = rxFormValueAccessor<RxTextAreaProps, string, HTMLTextAreaElement>((props, context) => {
-  let { className, onInput, onBlur, ...attrs } = props;
-  let { model, ref, disabled, cssClasses, setValue, markAsTouched } = context;
-  let onInputHandler = useCallback((event: FormEvent<HTMLTextAreaElement>) => {
-    setValue(event.currentTarget.value);
+  const { className, onInput, onBlur, ...attrs } = props;
+  const { model, ref, disabled, cssClasses, setModel, markAsTouched } = context;
+
+  const onInputHandler = useCallback((event: FormEvent<HTMLTextAreaElement>) => {
+    setModel(event.currentTarget.value);
     onInput && onInput(event);
-  }, [setValue, onInput]);
-  let onBlurHandler = useCallback((event: FocusEvent<HTMLTextAreaElement>) => {
+  }, [setModel, onInput]);
+
+  const onBlurHandler = useCallback((event: FocusEvent<HTMLTextAreaElement>) => {
     markAsTouched();
     onBlur && onBlur(event);
   }, [markAsTouched, onBlur]);

@@ -12,7 +12,7 @@ export function createRxFormGroup<Group>(formGroupInit: RxFormGroupInit<Group>):
 }
 
 function createControlsMap<Group, ControlName extends keyof Group = keyof Group>(
-  formGroupInit: RxFormGroupInit<Group>
+  formGroupInit: RxFormGroupInit<Group>,
 ): RxFormGroupControls<Group> {
   return Object.entries(formGroupInit).reduce((controls, [controlName, controlInit]) => {
     if (controlInit instanceof RxFormAbstractControl) {

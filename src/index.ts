@@ -14,7 +14,7 @@ import {
   RxFormErrors,
   RxFormGroup,
   RxFormGroupInit,
-  rxFormValueAccessor
+  rxFormValueAccessor,
 } from './core';
 import { useRxFormArray, useRxFormControl, useRxFormGroup, useRxFormGroupContext } from './hooks';
 import { Validators } from './validators';
@@ -46,5 +46,5 @@ export {
   RxSelect,
   RxTextArea,
   RxFormGroupConsumer,
-  RxControlError
+  RxControlError,
 };

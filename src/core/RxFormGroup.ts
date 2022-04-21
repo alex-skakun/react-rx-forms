@@ -1,5 +1,5 @@
 import { getCurrentFromObservable } from 'react-rx-tools';
-import { asyncScheduler, audit, combineLatest, map, Observable, scheduled, tap } from 'rxjs';
+import { asyncScheduler, audit, combineLatest, map, Observable, scheduled, startWith, tap } from 'rxjs';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
 import { RxFormControlError } from './RxFormControlError';
 import { RxFormErrors } from './RxFormErrors';
@@ -44,7 +44,7 @@ export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> e
     }))
       .pipe(
         map(entries => Object.fromEntries(entries) as Group),
-        tap(value => this.#value = value)
+        tap(value => this.#value = value),
       );
     this.#value = getCurrentFromObservable(this.value$)!;
     this.#initialValue = this.#value;
@@ -52,44 +52,54 @@ export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> e
     this.dirty$ = combineLatest(controlsEntries.map(([, control]) => control.dirty$))
       .pipe(
         map(dirtyValues => dirtyValues.every(Boolean)),
-        tap(dirty => this.#dirty = dirty)
+        tap(dirty => this.#dirty = dirty),
       );
     this.#dirty = getCurrentFromObservable(this.dirty$)!;
 
     this.touched$ = combineLatest(controlsEntries.map(([, control]) => control.touched$))
       .pipe(
         map(touchedValues => touchedValues.every(Boolean)),
-        tap(touched => this.#touched = touched)
+        tap(touched => this.#touched = touched),
       );
     this.#touched = getCurrentFromObservable(this.touched$)!;
 
     this.valid$ = combineLatest(controlsEntries.map(([, control]) => control.valid$))
       .pipe(
         map(validValues => validValues.every(Boolean)),
-        tap(valid => this.#valid = valid)
+        tap(valid => this.#valid = valid),
       );
     this.#valid = getCurrentFromObservable(this.valid$)!;
 
     this.error$ = combineLatest(controlsEntries.map(([controlName, control]) => {
-      return (control.error$ as Observable<RxFormControlError | RxFormErrors>).pipe(map(error => [controlName, error]));
+      return (control.error$ as Observable<RxFormControlError | RxFormErrors>).pipe(map(error => [
+        controlName,
+        error,
+      ]));
     }))
       .pipe(
         map(errorValues => {
-          let filteredEntries = errorValues.filter(([, error]) => error !== null);
+          const filteredEntries = errorValues.filter(([, error]) => error !== null);
 
           return filteredEntries.length ? Object.fromEntries(filteredEntries) as RxFormErrors<Group> : null;
         }),
-        tap(errors => this.#error = errors)
+        tap(errors => this.#error = errors),
       );
     this.#error = getCurrentFromObservable(this.error$)!;
 
     this.state$ = combineLatest([
-      this.value$, this.dirty$, this.touched$, this.valid$, this.error$
+      this.value$, this.dirty$, this.touched$, this.valid$, this.error$,
     ]).pipe(
-      audit(() => scheduled([], asyncScheduler)),
+      audit(() => scheduled([null], asyncScheduler)),
       map(([value, dirty, touched, valid, error]): RxFormGroupState<Group> => ({
-        value, dirty, touched, valid, error
-      }))
+        value, dirty, touched, valid, error,
+      })),
+      startWith({
+        value: this.value,
+        dirty: this.dirty,
+        touched: this.touched,
+        valid: this.valid,
+        error: this.error,
+      }),
     );
   }
 
@@ -114,19 +124,19 @@ export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> e
   }
 
   * controlsIterator(): IterableIterator<RxFormAbstractControl<Group[ControlName]>> {
-    for (let control of Object.values(this.controls)) {
+    for (const control of Object.values(this.controls)) {
       yield control as RxFormAbstractControl<Group[ControlName]>;
     }
   }
 
   markAsTouched(): void {
-    for (let control of this.controlsIterator()) {
+    for (const control of this.controlsIterator()) {
       control.markAsTouched();
     }
   }
 
   markAsUntouched(): void {
-    for (let control of this.controlsIterator()) {
+    for (const control of this.controlsIterator()) {
       control.markAsUntouched();
     }
   }
@@ -136,7 +146,7 @@ export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> e
       this.#initialValue = initialValue;
     }
 
-    for (let [controlName, controlValue] of Object.entries(this.#initialValue)) {
+    for (const [controlName, controlValue] of Object.entries(this.#initialValue)) {
       this.controls[controlName as ControlName].reset(controlValue as Group[ControlName]);
     }
   }
@@ -146,7 +156,7 @@ export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> e
   }
 
   patchValue(value: Partial<Group>): void {
-    for (let [controlName, controlValue] of Object.entries(value)) {
+    for (const [controlName, controlValue] of Object.entries(value)) {
       this.controls[controlName as ControlName].setValue(controlValue as Group[ControlName]);
     }
   }

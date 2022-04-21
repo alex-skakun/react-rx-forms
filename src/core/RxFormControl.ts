@@ -11,7 +11,7 @@ import {
   scheduled,
   startWith,
   switchMap,
-  tap
+  tap,
 } from 'rxjs';
 import { isNotEmptyValue } from '../helpers';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
@@ -48,7 +48,7 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
   constructor(
     initialValue: Value,
     validators: Array<RxFormControlValidator<Value>> = [],
-    asyncValidators: Array<RxFormControlAsyncValidator<Value>> = []
+    asyncValidators: Array<RxFormControlAsyncValidator<Value>> = [],
   ) {
     super();
 
@@ -63,7 +63,7 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
     this.dirty$ = this.value$.pipe(
       map(value => isNotEmptyValue(value)),
       distinctUntilChanged(),
-      tap(dirty => this.#dirty = dirty)
+      tap(dirty => this.#dirty = dirty),
     );
 
     this.error$ = this.value$.pipe(
@@ -76,26 +76,33 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
               ? of(syncValidatorsResult)
               : this.#runAsyncValidators(asyncValidators)
           )),
-          startWith(syncValidatorsResult)
+          startWith(syncValidatorsResult),
         )
       )),
       distinctUntilChanged(),
-      tap(error => this.#error = error)
+      tap(error => this.#error = error),
     );
 
     this.valid$ = this.error$.pipe(
       map(error => error === null),
       distinctUntilChanged(),
-      tap(valid => this.#valid = valid)
+      tap(valid => this.#valid = valid),
     );
 
     this.state$ = combineLatest([
-      this.value$, this.dirty$, this.touched$, this.valid$, this.error$
+      this.value$, this.dirty$, this.touched$, this.valid$, this.error$,
     ]).pipe(
-      audit(() => scheduled([], asyncScheduler)),
+      audit(() => scheduled([null], asyncScheduler)),
       map(([value, dirty, touched, valid, error]): RxFormControlState<Value> => ({
-        value, dirty, touched, valid, error
-      }))
+        value, dirty, touched, valid, error,
+      })),
+      startWith({
+        value: this.value,
+        dirty: this.dirty,
+        touched: this.touched,
+        valid: this.valid,
+        error: this.error,
+      }),
     );
   }
 
@@ -164,7 +171,7 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
   }
 
   #addValidatorIntoCollection<T>(collection: Array<T>, validator: T): Array<T> {
-    let newValidatorCollection = collection.slice();
+    const newValidatorCollection = collection.slice();
 
     newValidatorCollection.push(validator);
     return newValidatorCollection;

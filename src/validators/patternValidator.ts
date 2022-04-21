@@ -4,6 +4,6 @@ import { RxFormControl, RxFormControlError, RxFormControlValidator } from '../co
 export default ((pattern: RegExp) => (control: RxFormControl<string>): RxFormControlError => {
   return pattern.test(control.value) ? null : {
     validatorName: 'pattern',
-    details: { actualValue: control.value }
+    details: { actualValue: control.value },
   };
 }) as (pattern: RegExp) => RxFormControlValidator<string>;

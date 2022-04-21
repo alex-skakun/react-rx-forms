@@ -9,7 +9,7 @@ export type RxFormControlContextType<V = any, R extends Element = Element> = {
   touched: boolean;
   disabled: boolean;
   cssClasses: string;
-  setValue(value: V): void;
+  setModel(value: V): void;
   markAsTouched(): void;
 };
 
