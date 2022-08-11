@@ -1,6 +1,13 @@
-import React, { FocusEvent, FormEvent, TextareaHTMLAttributes, useCallback } from 'react';
-import { rxFormValueAccessor } from '../core';
+import { FocusEvent, FormEvent, RefAttributes, TextareaHTMLAttributes } from 'react';
+import { useFunction } from 'react-cool-hooks';
+import {
+  RxFormControlNameProps,
+  RxFormSingleControlProps,
+  RxFormStandaloneControlProps,
+  rxFormValueAccessor,
+} from '../core';
 import { classNames } from '../helpers';
+import { CustomComponent } from '../types/CustomComponent';
 
 
 type RxTextAreaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'disabled'>;
@@ -9,15 +16,15 @@ export const RxTextArea = rxFormValueAccessor<RxTextAreaProps, string, HTMLTextA
   const { className, onInput, onBlur, ...attrs } = props;
   const { model, ref, disabled, cssClasses, setModel, markAsTouched } = context;
 
-  const onInputHandler = useCallback((event: FormEvent<HTMLTextAreaElement>) => {
+  const onInputHandler = useFunction((event: FormEvent<HTMLTextAreaElement>) => {
     setModel(event.currentTarget.value);
     onInput && onInput(event);
-  }, [setModel, onInput]);
+  });
 
-  const onBlurHandler = useCallback((event: FocusEvent<HTMLTextAreaElement>) => {
+  const onBlurHandler = useFunction((event: FocusEvent<HTMLTextAreaElement>) => {
     markAsTouched();
     onBlur && onBlur(event);
-  }, [markAsTouched, onBlur]);
+  });
 
   return <textarea
     {...attrs}
@@ -28,4 +35,10 @@ export const RxTextArea = rxFormValueAccessor<RxTextAreaProps, string, HTMLTextA
     onInput={onInputHandler}
     onBlur={onBlurHandler}
   />;
-});
+}) as CustomComponent<{
+  (props: RxFormControlNameProps & RxTextAreaProps & RefAttributes<HTMLInputElement>): JSX.Element;
+  (props: RxFormSingleControlProps<string> & RxTextAreaProps & RefAttributes<HTMLInputElement>): JSX.Element;
+  (props: RxFormStandaloneControlProps<string> & RxTextAreaProps & RefAttributes<HTMLInputElement>): JSX.Element;
+}>;
+
+RxTextArea.displayName = 'RxTextArea';

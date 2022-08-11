@@ -20,11 +20,11 @@ export type RxFormControlInit<Value> =
   RxFormControlBothValidatorsInit<Value> |
   RxFormControlBothMultipleValidatorsInit<Value>;
 
-export function createRxFormControl<Value>(value: RxFormControlValueOnlyInit<Value>): RxFormControl<Value>
 export function createRxFormControl<Value>(controlInit: RxFormControlSingleValidatorInit<Value>): RxFormControl<Value>
 export function createRxFormControl<Value>(controlInit: RxFormControlMultipleValidatorsInit<Value>): RxFormControl<Value>
 export function createRxFormControl<Value>(controlInit: RxFormControlBothValidatorsInit<Value>): RxFormControl<Value>
 export function createRxFormControl<Value>(controlInit: RxFormControlBothMultipleValidatorsInit<Value>): RxFormControl<Value>
+export function createRxFormControl<Value>(value: RxFormControlValueOnlyInit<Value>): RxFormControl<Value>
 
 export function createRxFormControl<Value>(controlInit: RxFormControlInit<Value>): RxFormControl<Value> {
   return new RxFormControl(...getRxFormControlArgs(controlInit)) as RxFormControl<Value>;

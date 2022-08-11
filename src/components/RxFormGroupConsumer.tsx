@@ -1,5 +1,8 @@
-import React, { ReactElement, ReactNode } from 'react';
+import { ReactNode, useMemo } from 'react';
+import { isFunction } from 'value-guards';
 import { useObservable } from 'react-rx-tools';
+
+import type { CustomComponent } from '../types';
 import { RxFormGroupContext } from '../contexts';
 import { RxFormGroup, RxFormGroupState } from '../core';
 import { useRxFormGroupContext } from '../hooks';
@@ -29,20 +32,26 @@ export const RxFormGroupConsumer = ((props: {}) => {
   }
 
   return null;
-}) as {
-  <T>(props: RxFormGroupConsumerGroupProps<T>): ReactElement | null;
-  <T>(props: RxFormGroupConsumerGroupNameProps<T>): ReactElement | null;
-};
+}) as CustomComponent<{
+  <T>(props: RxFormGroupConsumerGroupProps<T>): JSX.Element;
+  <T>(props: RxFormGroupConsumerGroupNameProps<T>): JSX.Element;
+}>;
+
+RxFormGroupConsumer.displayName = 'RxFormGroupConsumer';
 
 function isGroup<T>(props: unknown): props is RxFormGroupConsumerGroupProps<T> {
   return (props as { group: RxFormGroup<T> }).group instanceof RxFormGroup;
 }
 
-function renderGroupContext<T>({ group, children }: RxFormGroupConsumerGroupProps<T>): ReactElement | null {
-  const state = useObservable(group.state$)!;
+function renderGroupContext<T>({ group, children }: RxFormGroupConsumerGroupProps<T>): JSX.Element | null {
+  const { value, dirty, touched, error, valid } = useObservable(group.state$)!;
+  const contextValue = useMemo((): [RxFormGroupState<T>, RxFormGroup<T>] => [
+    { value, dirty, touched, error, valid },
+    group,
+  ], [value, dirty, touched, error, valid, group]);
 
-  return <RxFormGroupContext.Provider value={[state, group]}>
-    {typeof children === 'function' ? children(state, group) : children}
+  return <RxFormGroupContext.Provider value={contextValue}>
+    {isFunction(children) ? children(...contextValue) : children}
   </RxFormGroupContext.Provider>;
 }
 
@@ -50,7 +59,7 @@ function isGroupName<T>(props: unknown): props is RxFormGroupConsumerGroupNamePr
   return !!(props as { groupName: string }).groupName;
 }
 
-function renderGroupNameContext<T>({ groupName, children }: RxFormGroupConsumerGroupNameProps<T>): ReactElement | null {
+function renderGroupNameContext<T>({ groupName, children }: RxFormGroupConsumerGroupNameProps<T>): JSX.Element | null {
   const [, rootGroup] = useRxFormGroupContext<{ [key: string]: RxFormGroup<T> }>();
 
   if (!rootGroup) {
@@ -63,9 +72,5 @@ function renderGroupNameContext<T>({ groupName, children }: RxFormGroupConsumerG
     throw new Error(`Can't find group by name "${groupName}".`);
   }
 
-  const state = useObservable<RxFormGroupState<T>>(group.state$)!;
-
-  return <RxFormGroupContext.Provider value={[state, group]}>
-    {typeof children === 'function' ? children(state, group) : children}
-  </RxFormGroupContext.Provider>;
+  return renderGroupContext<T>({ group, children });
 }

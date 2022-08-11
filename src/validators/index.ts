@@ -1,6 +1,6 @@
 import emailValidator from './emailValidator';
 import maxLengthValidator from './maxLengthValidator';
-import maxValidator from './maxValidator';
+import { max } from './maxValidator';
 import minLengthValidator from './minLengthValidator';
 import minValidator from './minValidator';
 import nativeValidator from './nativeValidator';
@@ -14,7 +14,7 @@ export class Validators {
   static readonly required = requiredValidator;
   static readonly requiredTrue = requiredTrueValidator;
   static readonly min = minValidator;
-  static readonly max = maxValidator;
+  static readonly max = max;
   static readonly minLength = minLengthValidator;
   static readonly maxLength = maxLengthValidator;
   static readonly pattern = patternValidator;

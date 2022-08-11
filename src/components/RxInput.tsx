@@ -1,19 +1,13 @@
-import React, {
-  ChangeEvent,
-  FocusEvent,
-  FormEvent,
-  InputHTMLAttributes,
-  ReactElement,
-  RefAttributes,
-  useCallback,
-} from 'react';
+import React, { ChangeEvent, FocusEvent, FormEvent, InputHTMLAttributes, ReactElement, RefAttributes } from 'react';
+import { useFunction } from 'react-cool-hooks';
 import {
   RxFormControlNameProps,
   RxFormSingleControlProps,
   RxFormStandaloneControlProps,
   rxFormValueAccessor,
 } from '../core';
-import { classNames, propsWithDefaults } from '../helpers';
+import { classNames, fillDefaults } from '../helpers';
+import { CustomComponent } from '../types';
 
 
 type RxInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'disabled'>;
@@ -40,10 +34,10 @@ type StringInputType =
   | 'radio';
 
 export const RxInput = rxFormValueAccessor<RxInputProps, unknown, HTMLInputElement>((props, context) => {
-  const { type, value, className, onInput, onBlur, onChange, ...attrs } = propsWithDefaults(props, { type: 'text' });
+  const { type, value, className, onInput, onBlur, onChange, ...attrs } = fillDefaults(props, { type: 'text' });
   const { model, ref, disabled, cssClasses, setModel, markAsTouched } = context;
 
-  const onChangeHandler = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+  const onChangeHandler = useFunction((event: ChangeEvent<HTMLInputElement>) => {
     const newValue = getInputValue(event.currentTarget, type);
 
     if (type === 'radio' && event.currentTarget.checked) {
@@ -53,20 +47,20 @@ export const RxInput = rxFormValueAccessor<RxInputProps, unknown, HTMLInputEleme
     }
 
     onChange && onChange(event);
-  }, [setModel, onChange, type]);
+  });
 
-  const onInputHandler = useCallback((event: FormEvent<HTMLInputElement>) => {
+  const onInputHandler = useFunction((event: FormEvent<HTMLInputElement>) => {
     if (type !== 'radio' && type !== 'checkbox') {
       setModel(getInputValue(event.currentTarget, type));
     }
 
     onInput && onInput(event);
-  }, [setModel, onInput, type]);
+  });
 
-  const onBlurHandler = useCallback((event: FocusEvent<HTMLInputElement>) => {
+  const onBlurHandler = useFunction((event: FocusEvent<HTMLInputElement>) => {
     markAsTouched();
     onBlur && onBlur(event);
-  }, [markAsTouched, onBlur]);
+  });
 
   return <input
     type={type}
@@ -79,7 +73,7 @@ export const RxInput = rxFormValueAccessor<RxInputProps, unknown, HTMLInputEleme
     onInput={onInputHandler}
     onBlur={onBlurHandler}
   />;
-}) as {
+}) as CustomComponent<{
   (props: RxFormControlNameProps & RxInputProps & RefAttributes<HTMLInputElement>): ReactElement;
   (props: RxFormSingleControlProps<string> & RxInputNoTypeProps & RefAttributes<HTMLInputElement>): ReactElement;
   (props: RxFormStandaloneControlProps<string> & RxInputNoTypeProps & RefAttributes<HTMLInputElement>): ReactElement;
@@ -91,7 +85,9 @@ export const RxInput = rxFormValueAccessor<RxInputProps, unknown, HTMLInputEleme
   (props: { type: 'checkbox' } & RxFormStandaloneControlProps<boolean> & RxInputNoTypeProps & RefAttributes<HTMLInputElement>): ReactElement;
   (props: { type: 'file' } & RxFormSingleControlProps<File[]> & RxInputNoValueProps & RefAttributes<HTMLInputElement>): ReactElement;
   (props: { type: 'file' } & RxFormStandaloneControlProps<File[]> & RxInputNoValueProps & RefAttributes<HTMLInputElement>): ReactElement;
-};
+}>;
+
+RxInput.displayName = 'RxInput';
 
 function getValueAttributes(
   model: unknown,

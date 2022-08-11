@@ -1,7 +1,8 @@
-import React, { ReactElement, ReactNode } from 'react';
-import { useObservable } from 'react-rx-tools';
+import { ReactElement, ReactNode } from 'react';
+import { Render$ } from 'react-rx-tools';
 import { RxFormControl, RxFormControlError } from '../core';
 import { useRxFormGroupContext } from '../hooks';
+import { CustomComponent } from '../types';
 
 
 type RxControlErrorNameProps = {
@@ -16,7 +17,7 @@ type RxControlErrorInstanceProps<T> = {
 
 type RxControlErrorProps<T = unknown> = RxControlErrorNameProps | RxControlErrorInstanceProps<T>;
 
-export const RxControlError = ((props: RxControlErrorProps): ReactElement | null => {
+export const RxControlError = ((props: RxControlErrorProps): JSX.Element | null => {
   if (isControlNameProps(props)) {
     return renderAsControlName(props);
   }
@@ -26,10 +27,12 @@ export const RxControlError = ((props: RxControlErrorProps): ReactElement | null
   }
 
   return null;
-}) as {
-  (props: RxControlErrorNameProps): ReactElement | null;
-  <T>(props: RxControlErrorInstanceProps<T>): ReactElement | null;
-};
+}) as CustomComponent<{
+  (props: RxControlErrorNameProps): JSX.Element | null;
+  <T>(props: RxControlErrorInstanceProps<T>): JSX.Element | null;
+}>;
+
+RxControlError.displayName = 'RxControlError';
 
 function isControlNameProps(props: RxControlErrorProps): props is RxControlErrorNameProps {
   return !!(props as RxControlErrorNameProps).formControlName;
@@ -52,13 +55,13 @@ function renderAsControlName({ formControlName, children }: RxControlErrorNamePr
     throw new Error(`Can't find control by name "${formControlName}".`);
   }
 
-  const error = useObservable(formControl.error$)!;
-
-  return <>{children(error)}</>;
+  return <Render$ $={formControl.error$}>
+    {error => error !== undefined && children(error)}
+  </Render$>;
 }
 
 function renderAsControlInstance<T>({ formControl, children }: RxControlErrorInstanceProps<T>): ReactElement | null {
-  const error = useObservable(formControl.error$)!;
-
-  return <>{children(error)}</>;
+  return <Render$ $={formControl.error$}>
+    {error => error !== undefined && children(error)}
+  </Render$>;
 }

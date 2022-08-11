@@ -1,26 +1,58 @@
 {
   "name": "react-rx-forms",
   "version": "1.0.0",
-  "scripts": {
-    "prebuild": "rm -rf ./dist",
-    "build": "node_modules/.bin/tsc",
-    "postbuild": "node tools/dist-files.js"
+  "sideEffects": false,
+  "author": {
+    "email": "alex.skakun@me.com",
+    "name": "Aleksey Skakun",
+    "url": "https://github.com/alex-skakun"
   },
+  "repository": {
+    "url": "https://github.com/alex-skakun/react-rx-forms"
+  },
+  "license": "MIT",
+  "keywords": [],
+  "config": {
+    "localRegistry": "http://localhost:4873"
+  },
+  "scripts": {
+    "test": "npx jest",
+    "test:coverage": "npx jest --coverage",
+    "updateLocals": "node ./tools/updateLocalDependencies.mjs",
+    "build": "npm run build:cjs && npm run build:esm",
+    "prebuild": "rimraf ./dist",
+    "postbuild": "node ./tools/completePackage.mjs",
+    "build:cjs": "echo 'Building CommonJS version' && tsc -p ./tsconfig.cjs.json --pretty",
+    "build:esm": "echo 'Building ESModule version' && tsc -p ./tsconfig.esm.json --pretty",
+    "prerelease": "npm run build",
+    "release": "npm publish ./dist --tag latest --access public",
+    "prerelease:dev": "npm run build && (npm unpublish --registry $npm_package_config_localRegistry --force || true)",
+    "release:dev": "npm publish ./dist --registry $npm_package_config_localRegistry"
+  },
+  "localDevDependencies": [
+    "value-guards",
+    "react-cool-hooks",
+    "react-rx-tools"
+  ],
   "devDependencies": {
+    "@testing-library/jest-dom": "^5.16.4",
     "@types/react": "^18.0.5",
     "@types/react-dom": "^18.0.1",
-    "clean-webpack-plugin": "^4.0.0",
     "html-webpack-plugin": "^5.5.0",
+    "jest-environment-jsdom": "^28.1.1",
+    "react-cool-hooks": "^1.0.2",
     "react-dom": "^18.0.0",
+    "react-rx-tools": "^1.3.0",
+    "ts-jest": "^28.0.5",
     "ts-loader": "^9.2.8",
-    "typescript": "^4.6.3",
+    "typescript": "^4.7.4",
+    "value-guards": "^1.0.0",
     "webpack": "^5.72.0",
     "webpack-cli": "^4.9.2",
     "webpack-dev-server": "^4.8.1"
   },
-  "dependencies": {
-    "react": "^18.0.0",
-    "react-rx-tools": "^1.0.2",
+  "peerDependencies": {
+    "react": "16.x.x - 18.x.x",
     "rxjs": "^7.5.5"
   }
 }

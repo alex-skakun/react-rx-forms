@@ -1,5 +1,4 @@
 import {
-  asyncScheduler,
   audit,
   BehaviorSubject,
   combineLatest,
@@ -8,29 +7,31 @@ import {
   Observable,
   of,
   race,
-  scheduled,
   startWith,
   switchMap,
   tap,
 } from 'rxjs';
-import { isNotEmptyValue } from '../helpers';
+import { isEmptyInputValue, isNonEmptyArray } from 'value-guards';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
 import { RxFormControlAsyncValidator } from './RxFormControlAsyncValidator';
 import { RxFormControlError } from './RxFormControlError';
 import { RxFormControlValidator } from './RxFormControlValidator';
+import { shareAndSubscribe, trigger } from '../helpers';
 
 
-export type RxFormControlState<Value> = {
+export interface RxFormControlState<Value> {
   value: Value;
   dirty: boolean;
   touched: boolean;
   valid: boolean;
   error: RxFormControlError;
-};
+}
 
 export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
   #initialValue: Value;
-  #dirty: boolean;
+  #value: Value;
+  #dirty: boolean = false;
+  #touched: boolean = false;
   #error: RxFormControlError = null;
   #valid: boolean = true;
   readonly #validatorsSubject: BehaviorSubject<Array<RxFormControlValidator<Value>>>;
@@ -43,7 +44,7 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
   readonly error$: Observable<RxFormControlError>;
   readonly valid$: Observable<boolean>;
   readonly state$: Observable<RxFormControlState<Value>>;
-  readonly touched$: Observable<boolean> = this.#touchedSubject.pipe(distinctUntilChanged());
+  readonly touched$: Observable<boolean>;
 
   constructor(
     initialValue: Value,
@@ -53,61 +54,21 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
     super();
 
     this.#initialValue = initialValue;
+    this.#value = initialValue;
+    this.#valueSubject = new BehaviorSubject<Value>(initialValue);
     this.#validatorsSubject = new BehaviorSubject(validators);
     this.#asyncValidatorsSubject = new BehaviorSubject(asyncValidators);
 
-    this.#valueSubject = new BehaviorSubject<Value>(initialValue);
-    this.value$ = this.#valueSubject.pipe(distinctUntilChanged());
-
-    this.#dirty = isNotEmptyValue(initialValue);
-    this.dirty$ = this.value$.pipe(
-      map(value => isNotEmptyValue(value)),
-      distinctUntilChanged(),
-      tap(dirty => this.#dirty = dirty),
-    );
-
-    this.error$ = this.value$.pipe(
-      switchMap(() => this.#validatorsSubject),
-      map(validators => this.#runValidators(validators)),
-      switchMap(syncValidatorsResult => (
-        this.#asyncValidatorsSubject.pipe(
-          switchMap(asyncValidators => (
-            syncValidatorsResult
-              ? of(syncValidatorsResult)
-              : this.#runAsyncValidators(asyncValidators)
-          )),
-          startWith(syncValidatorsResult),
-        )
-      )),
-      distinctUntilChanged(),
-      tap(error => this.#error = error),
-    );
-
-    this.valid$ = this.error$.pipe(
-      map(error => error === null),
-      distinctUntilChanged(),
-      tap(valid => this.#valid = valid),
-    );
-
-    this.state$ = combineLatest([
-      this.value$, this.dirty$, this.touched$, this.valid$, this.error$,
-    ]).pipe(
-      audit(() => scheduled([null], asyncScheduler)),
-      map(([value, dirty, touched, valid, error]): RxFormControlState<Value> => ({
-        value, dirty, touched, valid, error,
-      })),
-      startWith({
-        value: this.value,
-        dirty: this.dirty,
-        touched: this.touched,
-        valid: this.valid,
-        error: this.error,
-      }),
-    );
+    this.value$ = this.#createValue();
+    this.dirty$ = this.#createDirty();
+    this.touched$ = this.#createTouched();
+    this.error$ = this.#createError();
+    this.valid$ = this.#createValid();
+    this.state$ = this.#createState();
   }
 
   get value(): Value {
-    return this.#valueSubject.getValue();
+    return this.#value;
   }
 
   get dirty(): boolean {
@@ -115,7 +76,7 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
   }
 
   get touched(): boolean {
-    return this.#touchedSubject.getValue();
+    return this.#touched;
   }
 
   get error(): RxFormControlError {
@@ -134,51 +95,50 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
     return this.#asyncValidatorsSubject.getValue();
   }
 
+  @trigger()
   setValue(value: Value): void {
     this.#valueSubject.next(value);
   }
 
-  reset(initialValue?: Value): void {
-    if (initialValue !== undefined) {
-      this.#initialValue = initialValue;
+  reset(initialValue?: Value): void;
+
+  @trigger()
+  reset(...args: [initialValue?: Value]): void {
+    if (isNonEmptyArray(args)) {
+      this.#initialValue = args[0];
     }
 
     this.#valueSubject.next(this.#initialValue);
   }
 
+  @trigger()
   markAsTouched(): void {
     this.#touchedSubject.next(true);
   }
 
+  @trigger()
   markAsUntouched(): void {
     this.#touchedSubject.next(false);
   }
 
+  @trigger()
   addValidator(validator: RxFormControlValidator<Value>): void {
-    this.#validatorsSubject.next(this.#addValidatorIntoCollection(this.#validators, validator));
+    this.#validatorsSubject.next(addValidatorIntoCollection(this.#validators, validator));
   }
 
+  @trigger()
   removeValidator(validator: RxFormControlValidator<Value>): void {
-    this.#validatorsSubject.next(this.#removeValidatorFromCollection(this.#validators, validator));
+    this.#validatorsSubject.next(removeValidatorFromCollection(this.#validators, validator));
   }
 
+  @trigger()
   addAsyncValidator(validator: RxFormControlAsyncValidator<Value>): void {
-    this.#asyncValidatorsSubject.next(this.#addValidatorIntoCollection(this.#asyncValidators, validator));
+    this.#asyncValidatorsSubject.next(addValidatorIntoCollection(this.#asyncValidators, validator));
   }
 
+  @trigger()
   removeAsyncValidator(validator: RxFormControlAsyncValidator<Value>): void {
-    this.#asyncValidatorsSubject.next(this.#removeValidatorFromCollection(this.#asyncValidators, validator));
-  }
-
-  #addValidatorIntoCollection<T>(collection: Array<T>, validator: T): Array<T> {
-    const newValidatorCollection = collection.slice();
-
-    newValidatorCollection.push(validator);
-    return newValidatorCollection;
-  }
-
-  #removeValidatorFromCollection<T>(collection: Array<T>, validator: T): Array<T> {
-    return collection.filter(existingValidator => existingValidator !== validator);
+    this.#asyncValidatorsSubject.next(removeValidatorFromCollection(this.#asyncValidators, validator));
   }
 
   #runValidators(validators: Array<RxFormControlValidator<Value>>): RxFormControlError {
@@ -194,7 +154,101 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
   }
 
   #runAsyncValidators(asyncValidators: Array<RxFormControlAsyncValidator<Value>>): Observable<RxFormControlError> {
-    return race(asyncValidators.map(validator => validator(this)));
+    return race(asyncValidators.map(validator => validator(this))).pipe(
+      tap(() => Promise.resolve().then(() => this.nextTick())),
+    );
   }
 
+  #createValue(): Observable<Value> {
+    const [value$, valueSubscription] = shareAndSubscribe(this.#valueSubject.pipe(
+      distinctUntilChanged(),
+      tap(value => this.#value = value),
+    ));
+    this.addSubscription(valueSubscription);
+
+    return value$;
+  }
+
+  #createDirty(): Observable<boolean> {
+    const [dirty$, dirtySubscription] = shareAndSubscribe(this.value$.pipe(
+      map(value => !isEmptyInputValue(value)),
+      distinctUntilChanged(),
+      tap(dirty => this.#dirty = dirty),
+    ));
+    this.addSubscription(dirtySubscription);
+
+    return dirty$;
+  }
+
+  #createTouched(): Observable<boolean> {
+    const [touched$, touchedSubscription] = shareAndSubscribe(this.#touchedSubject.pipe(
+      distinctUntilChanged(),
+      tap(touched => this.#touched = touched),
+    ));
+    this.addSubscription(touchedSubscription);
+
+    return touched$;
+  }
+
+  #createError(): Observable<RxFormControlError> {
+    const [error$, errorSubscription] = shareAndSubscribe(this.value$.pipe(
+      switchMap(() => this.#validatorsSubject.pipe(
+        map(validators => this.#runValidators(validators)),
+      )),
+      switchMap(syncValidatorsResult => this.#asyncValidatorsSubject.pipe(
+        switchMap(asyncValidators => (
+          syncValidatorsResult ? of(syncValidatorsResult) : this.#runAsyncValidators(asyncValidators)
+        )),
+        startWith(syncValidatorsResult),
+      )),
+      distinctUntilChanged(),
+      tap(error => this.#error = error),
+    ));
+    this.addSubscription(errorSubscription);
+
+    return error$;
+  }
+
+  #createValid(): Observable<boolean> {
+    const [valid$, validSubscription] = shareAndSubscribe(this.error$.pipe(
+      map(error => error === null),
+      distinctUntilChanged(),
+      tap(valid => this.#valid = valid),
+    ));
+    this.addSubscription(validSubscription);
+
+    return valid$;
+  }
+
+  #createState(): Observable<RxFormControlState<Value>> {
+    const [state$, stateSubscription] = shareAndSubscribe(
+      combineLatest([this.value$, this.dirty$, this.touched$, this.valid$, this.error$])
+        .pipe(
+          audit(() => this.tick$),
+          map(([value, dirty, touched, valid, error]): RxFormControlState<Value> => {
+            return { value, dirty, touched, valid, error };
+          }),
+          startWith({
+            value: this.value,
+            dirty: this.dirty,
+            touched: this.touched,
+            valid: this.valid,
+            error: this.error,
+          }),
+        ));
+    this.addSubscription(stateSubscription);
+
+    return state$;
+  }
+}
+
+function addValidatorIntoCollection<T>(collection: Array<T>, validator: T): Array<T> {
+  const newValidatorCollection = collection.slice();
+
+  newValidatorCollection.push(validator);
+  return newValidatorCollection;
+}
+
+function removeValidatorFromCollection<T>(collection: Array<T>, validator: T): Array<T> {
+  return collection.filter(existingValidator => existingValidator !== validator);
 }

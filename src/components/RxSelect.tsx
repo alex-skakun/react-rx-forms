@@ -16,17 +16,19 @@ import {
   RxFormStandaloneControlProps,
   rxFormValueAccessor,
 } from '../core';
-import { classNames, propsWithDefaults } from '../helpers';
+import { classNames, fillDefaults } from '../helpers';
+import { useFunction } from 'react-cool-hooks';
+import { CustomComponent } from '../types/CustomComponent';
 
 
 type RxSelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'value' | 'disabled'>;
 
 export const RxSelect = rxFormValueAccessor<RxSelectProps, string | string[], HTMLSelectElement>((props, context) => {
-  const { multiple, className, onChange, onBlur, children, ...attrs } = propsWithDefaults(props, { multiple: false });
+  const { multiple, className, onChange, onBlur, children, ...attrs } = fillDefaults(props, { multiple: false });
   const { model, ref, disabled, cssClasses, setModel, markAsTouched } = context;
   const inputRef = useRef<HTMLSelectElement>(null);
 
-  const onChangeHandler = useCallback((event: ChangeEvent<HTMLSelectElement>) => {
+  const onChangeHandler = useFunction((event: ChangeEvent<HTMLSelectElement>) => {
     if (multiple) {
       setModel(Array.from(event.currentTarget.selectedOptions, option => option.value));
     } else {
@@ -34,12 +36,12 @@ export const RxSelect = rxFormValueAccessor<RxSelectProps, string | string[], HT
     }
 
     onChange && onChange(event);
-  }, [setModel, onChange]);
+  });
 
-  const onBlurHandler = useCallback((event: FocusEvent<HTMLSelectElement>) => {
+  const onBlurHandler = useFunction((event: FocusEvent<HTMLSelectElement>) => {
     markAsTouched();
     onBlur && onBlur(event);
-  }, [markAsTouched, onBlur]);
+  });
 
   useEffect(() => {
     if (inputRef) {
@@ -65,10 +67,12 @@ export const RxSelect = rxFormValueAccessor<RxSelectProps, string | string[], HT
     onChange={onChangeHandler}
     onBlur={onBlurHandler}
   >{children}</select>;
-}) as {
+}) as CustomComponent<{
   (props: RxFormControlNameProps & RxSelectProps & RefAttributes<HTMLSelectElement>): ReactElement;
   (props: { multiple: true } & RxFormSingleControlProps<string[]> & Omit<RxSelectProps, 'multiple'> & RefAttributes<HTMLSelectElement>): ReactElement;
   (props: { multiple: true } & RxFormStandaloneControlProps<string[]> & Omit<RxSelectProps, 'multiple'> & RefAttributes<HTMLSelectElement>): ReactElement;
   (props: { multiple?: false } & RxFormSingleControlProps<string> & Omit<RxSelectProps, 'multiple'> & RefAttributes<HTMLSelectElement>): ReactElement;
   (props: { multiple?: false } & RxFormStandaloneControlProps<string> & Omit<RxSelectProps, 'multiple'> & RefAttributes<HTMLSelectElement>): ReactElement;
-};
+}>;
+
+RxSelect.displayName = 'RxSelect';

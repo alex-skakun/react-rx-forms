@@ -1,13 +1,11 @@
-.idea
 .git
 .gitignore
 .npmignore
 tsconfig.json
+tsconfig.*.json
 package-lock.json
 jest.config.js
-dist
-node_modules
+webpack.config.js
 src
 tools
-test
 demo

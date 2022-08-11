@@ -1,23 +1,25 @@
-import React, {
+import {
   FormEvent,
   FormHTMLAttributes,
   forwardRef,
-  ReactElement,
   ReactNode,
   RefAttributes,
-  useCallback,
   useEffect,
   useMemo,
   useState,
 } from 'react';
+import { filter, from, Observable, of, Subscription, switchMap, take, tap } from 'rxjs';
+import { isFunction } from 'value-guards';
+import { useFunction, useOnce } from 'react-cool-hooks';
 import { useObservable } from 'react-rx-tools';
-import { Observable, of, Subscription, switchMap, tap } from 'rxjs';
+
+import type { CustomComponent } from '../types';
 import { RxFormContext, RxFormContextState } from '../contexts';
 import { RxFormGroup } from '../core';
 import { classNames } from '../helpers';
 
 
-type RxFormProps<GroupType = unknown> = Omit<FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> & {
+type RxFormProps<GroupType extends Record<string, any> = Record<string, any>> = Omit<FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> & {
   formGroup: RxFormGroup<GroupType>;
   children: ReactNode | {
     (state: RxFormContextState<GroupType>): ReactNode;
@@ -25,40 +27,54 @@ type RxFormProps<GroupType = unknown> = Omit<FormHTMLAttributes<HTMLFormElement>
   onSubmit?(value: GroupType): void | Promise<any> | Observable<any>;
 };
 
-export const RxForm = forwardRef<HTMLFormElement, RxFormProps>((props, ref) => {
-  const subscriptions = useMemo(() => ({ progressSubscription: Subscription.EMPTY }), []);
+export const RxForm = forwardRef<HTMLFormElement, RxFormProps>((props, forwardedRef) => {
   const { formGroup, children, className, onSubmit, ...attrs } = props;
+  const subscriptions = useOnce(() => ({ progressSubscription: Subscription.EMPTY }));
   const [progress, setProgress] = useState(false);
-  const groupState = useObservable(formGroup.state$)!;
-  const contextState = useMemo(() => ({ progress, ...groupState }), [progress, groupState]);
+  const { value, dirty, touched, error, valid } = useObservable(formGroup.state$)!;
+  const contextState = useMemo(() => {
+    return { progress, value, dirty, touched, error, valid };
+  }, [progress, value, dirty, touched, error, valid]);
   const cssClasses = useMemo(() => classNames({
-    'rx-form-valid': groupState.valid,
-    'rx-form-invalid': !groupState.valid,
-    'rx-form-dirty': groupState.dirty,
-    'rx-form-touched': groupState.touched,
-  }), [groupState]);
+    'rx-form-progress': progress,
+    'rx-form-valid': valid,
+    'rx-form-invalid': !valid,
+    'rx-form-dirty': dirty,
+    'rx-form-touched': touched,
+  }), [progress, value, dirty, touched, error, valid]);
 
-  const onSubmitHandler = useCallback((event: FormEvent<HTMLFormElement>) => {
+  const onSubmitHandler = useFunction((event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     subscriptions.progressSubscription.unsubscribe();
     subscriptions.progressSubscription = of(null)
       .pipe(
+        filter(() => formGroup.valid),
         tap(() => setProgress(true)),
-        switchMap(() => (onSubmit && onSubmit(formGroup.value)) ?? of(null)),
+        switchMap(() => {
+          if (isFunction(onSubmit)) {
+            const result = onSubmit(formGroup.value);
+
+            return result ? from(result).pipe(take(1)) : of(null);
+          }
+
+          return of(null);
+        }),
         tap(() => setProgress(false)),
       )
       .subscribe();
-  }, [onSubmit, formGroup]);
+  });
 
   useEffect(() => {
     return () => subscriptions.progressSubscription.unsubscribe();
-  });
+  }, []);
 
-  return <form {...attrs} ref={ref} className={classNames(className, cssClasses)} onSubmit={onSubmitHandler}>
+  return <form {...attrs} ref={forwardedRef} className={classNames(className, cssClasses)} onSubmit={onSubmitHandler}>
     <RxFormContext.Provider value={[contextState, formGroup]}>
-      {typeof children === 'function' ? children(contextState) : children}
+      {isFunction(children) ? children(contextState) : children}
     </RxFormContext.Provider>
   </form>;
-}) as unknown as {
-  <GroupType>(props: RxFormProps<GroupType> & RefAttributes<HTMLFormElement>): ReactElement
-};
+}) as unknown as CustomComponent<{
+  <GroupType>(props: RxFormProps<GroupType> & RefAttributes<HTMLFormElement>): JSX.Element;
+}>;
+
+RxForm.displayName = 'RxForm';

@@ -1,12 +1,22 @@
-import { getCurrentFromObservable } from 'react-rx-tools';
-import { asyncScheduler, audit, combineLatest, map, Observable, scheduled, startWith, tap } from 'rxjs';
+import {
+  asapScheduler,
+  audit,
+  combineLatest,
+  distinctUntilChanged,
+  map,
+  Observable,
+  scheduled,
+  startWith,
+  tap,
+} from 'rxjs';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
 import { RxFormControlError } from './RxFormControlError';
 import { RxFormErrors } from './RxFormErrors';
+import { shareAndSubscribe } from '../helpers';
 
 
-export type RxFormGroupControls<Group, ControlName extends keyof Group = keyof Group> = {
-  [P in ControlName]: RxFormAbstractControl<Group[P]>
+export type ControlsMap<Group extends Record<string, any>, ControlName extends keyof Group> = {
+  [P in ControlName]: RxFormAbstractControl<Group[P]>;
 };
 
 export type RxFormGroupState<Group> = {
@@ -31,76 +41,27 @@ export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> e
   readonly valid$: Observable<boolean>;
   readonly error$: Observable<RxFormErrors<Group>>;
   readonly state$: Observable<RxFormGroupState<Group>>;
-  readonly controls: Readonly<RxFormGroupControls<Group>>;
+  readonly controls: Readonly<ControlsMap<Group, ControlName>>;
 
-  constructor(controls: RxFormGroupControls<Group>) {
+  constructor(controls: ControlsMap<Group, ControlName>) {
     super();
 
-    this.controls = controls;
     const controlsEntries = Object.entries(controls) as Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>;
+    this.controls = controls;
 
-    this.value$ = combineLatest(controlsEntries.map(([controlName, control]) => {
-      return control.value$.pipe(map(value => [controlName, value]));
-    }))
-      .pipe(
-        map(entries => Object.fromEntries(entries) as Group),
-        tap(value => this.#value = value),
-      );
-    this.#value = getCurrentFromObservable(this.value$)!;
-    this.#initialValue = this.#value;
+    this.value$ = this.#createValue(controlsEntries);
+    this.dirty$ = this.#createDirty(controlsEntries);
+    this.touched$ = this.#createTouched(controlsEntries);
+    this.error$ = this.#createError(controlsEntries);
+    this.valid$ = this.#createValid(controlsEntries);
+    this.state$ = this.#createState();
 
-    this.dirty$ = combineLatest(controlsEntries.map(([, control]) => control.dirty$))
-      .pipe(
-        map(dirtyValues => dirtyValues.every(Boolean)),
-        tap(dirty => this.#dirty = dirty),
-      );
-    this.#dirty = getCurrentFromObservable(this.dirty$)!;
-
-    this.touched$ = combineLatest(controlsEntries.map(([, control]) => control.touched$))
-      .pipe(
-        map(touchedValues => touchedValues.every(Boolean)),
-        tap(touched => this.#touched = touched),
-      );
-    this.#touched = getCurrentFromObservable(this.touched$)!;
-
-    this.valid$ = combineLatest(controlsEntries.map(([, control]) => control.valid$))
-      .pipe(
-        map(validValues => validValues.every(Boolean)),
-        tap(valid => this.#valid = valid),
-      );
-    this.#valid = getCurrentFromObservable(this.valid$)!;
-
-    this.error$ = combineLatest(controlsEntries.map(([controlName, control]) => {
-      return (control.error$ as Observable<RxFormControlError | RxFormErrors>).pipe(map(error => [
-        controlName,
-        error,
-      ]));
-    }))
-      .pipe(
-        map(errorValues => {
-          const filteredEntries = errorValues.filter(([, error]) => error !== null);
-
-          return filteredEntries.length ? Object.fromEntries(filteredEntries) as RxFormErrors<Group> : null;
-        }),
-        tap(errors => this.#error = errors),
-      );
-    this.#error = getCurrentFromObservable(this.error$)!;
-
-    this.state$ = combineLatest([
-      this.value$, this.dirty$, this.touched$, this.valid$, this.error$,
-    ]).pipe(
-      audit(() => scheduled([null], asyncScheduler)),
-      map(([value, dirty, touched, valid, error]): RxFormGroupState<Group> => ({
-        value, dirty, touched, valid, error,
-      })),
-      startWith({
-        value: this.value,
-        dirty: this.dirty,
-        touched: this.touched,
-        valid: this.valid,
-        error: this.error,
-      }),
-    );
+    this.#initialValue = this.value;
+    this.#value = this.value;
+    this.#dirty = this.dirty;
+    this.#touched = this.touched;
+    this.#error = this.error;
+    this.#valid = this.valid;
   }
 
   get value(): Group {
@@ -147,7 +108,7 @@ export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> e
     }
 
     for (const [controlName, controlValue] of Object.entries(this.#initialValue)) {
-      this.controls[controlName as ControlName].reset(controlValue as Group[ControlName]);
+      this.controls[controlName as ControlName].reset(controlValue);
     }
   }
 
@@ -157,7 +118,109 @@ export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> e
 
   patchValue(value: Partial<Group>): void {
     for (const [controlName, controlValue] of Object.entries(value)) {
-      this.controls[controlName as ControlName].setValue(controlValue as Group[ControlName]);
+      this.controls[controlName as ControlName].setValue(controlValue);
     }
   }
+
+  #createValue(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<Group> {
+    const [value$, valueSubscription] = shareAndSubscribe(
+      combineLatest(entries.map(([controlName, control]) => {
+        return control.value$.pipe(map(value => [controlName, value]));
+      }))
+        .pipe(
+          map(entries => Object.fromEntries(entries) as Group),
+          tap(value => this.#value = value),
+        ),
+    );
+    this.addSubscription(valueSubscription);
+
+    return value$;
+  }
+
+  #createDirty(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<boolean> {
+    const [dirty$, dirtySubscription] = shareAndSubscribe(
+      combineLatest(entries.map(([, control]) => control.dirty$))
+        .pipe(
+          map(dirtyValues => dirtyValues.every(Boolean)),
+          distinctUntilChanged(),
+          tap(dirty => this.#dirty = dirty),
+        ),
+    );
+    this.addSubscription(dirtySubscription);
+
+    return dirty$;
+  }
+
+  #createTouched(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<boolean> {
+    const [touched$, touchedSubscription] = shareAndSubscribe(
+      combineLatest(entries.map(([, control]) => control.touched$))
+        .pipe(
+          map(touchedValues => touchedValues.every(Boolean)),
+          distinctUntilChanged(),
+          tap(touched => this.#touched = touched),
+        ),
+    );
+    this.addSubscription(touchedSubscription);
+
+    return touched$;
+  }
+
+  #createError(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<RxFormErrors<Group>> {
+    const [error$, errorSubscription] = shareAndSubscribe(
+      combineLatest(entries.map(([controlName, control]) => {
+        return (control.error$ as Observable<RxFormControlError | RxFormErrors>).pipe(
+          map(error => [controlName, error]));
+      }))
+        .pipe(
+          map(errorValues => {
+            const filteredEntries = errorValues.filter(([, error]) => error !== null);
+
+            return filteredEntries.length ? Object.fromEntries(filteredEntries) as RxFormErrors<Group> : null;
+          }),
+          distinctUntilChanged(),
+          tap(errors => this.#error = errors),
+        ),
+    );
+    this.addSubscription(errorSubscription);
+
+    return error$;
+  }
+
+  #createValid(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<boolean> {
+    const [valid$, validSubscription] = shareAndSubscribe(
+      combineLatest(entries.map(([, control]) => control.valid$))
+        .pipe(
+          map(validValues => validValues.every(Boolean)),
+          distinctUntilChanged(),
+          tap(valid => this.#valid = valid),
+        ),
+    );
+    this.addSubscription(validSubscription);
+
+    return valid$;
+  }
+
+  #createState(): Observable<RxFormGroupState<Group>> {
+    const [state$, stateSubscription] = shareAndSubscribe(
+      combineLatest([
+        this.value$, this.dirty$, this.touched$, this.valid$, this.error$,
+      ]).pipe(
+        audit(() => scheduled([null], asapScheduler)),
+        map(([value, dirty, touched, valid, error]): RxFormGroupState<Group> => {
+          return { value, dirty, touched, valid, error };
+        }),
+        startWith({
+          value: this.value,
+          dirty: this.dirty,
+          touched: this.touched,
+          valid: this.valid,
+          error: this.error,
+        }),
+      ),
+    );
+    this.addSubscription(stateSubscription);
+
+    return state$;
+  }
+
 }
