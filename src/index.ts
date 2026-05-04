@@ -19,7 +19,7 @@ import {
   RxFormControlAsyncValidator,
   RxFormControlError,
   RxFormControlInit,
-  RxFormControlValidator,
+  RxFormValidator,
   RxFormErrors,
   RxFormGroup,
   RxFormGroupInit,
@@ -32,7 +32,7 @@ import { Validators } from './validators';
 export {
   RxFormAbstractControl,
   RxFormControl,
-  RxFormControlValidator,
+  RxFormValidator,
   RxFormControlAsyncValidator,
   RxFormControlError,
   RxFormErrors,

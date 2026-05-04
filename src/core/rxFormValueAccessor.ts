@@ -32,12 +32,12 @@ type RxFormControlComponent<Props, Value, Ref> = {
   (props: RxFormStandaloneControlProps<Value> & Props & RefAttributes<Ref>): ReactElement | null;
 };
 
-type ComponentWithRxFormControlContext<Props, Value, Ref extends Element> = (
+type ComponentWithRxFormControlContext<Props, Value, Ref> = (
   props: Props,
   context: RxFormControlContextType<Value, Ref>,
 ) => ReactElement;
 
-export function rxFormValueAccessor<Props, Value, Ref extends Element = Element>(
+export function rxFormValueAccessor<Props = Record<never, never>, Value = unknown, Ref = never>(
   component: ComponentWithRxFormControlContext<Props, Value, Ref>,
 ): RxFormControlComponent<Props, Value, Ref> {
   return forwardRef<Ref>((props, ref) => {
@@ -53,12 +53,14 @@ export function rxFormValueAccessor<Props, Value, Ref extends Element = Element>
       return renderAsStandaloneControl(props, component, ref);
     }
 
-    return null;
-  }) as RxFormControlComponent<Props, Value, Ref>;
+    throw new Error(
+      'Unsupported set of props. Component must have any of next props: "formControlName", "formControl" of "model"'
+    );
+  });
 }
 
 function isPropsOfControlName<Props>(props: any): props is RxFormControlNameProps & Props {
-  return !!props.formControlName;
+  return Boolean(props.formControlName);
 }
 
 function isPropsOfSingleControl<Props, Value>(props: any): props is RxFormSingleControlProps<Value> & Props {
@@ -66,14 +68,14 @@ function isPropsOfSingleControl<Props, Value>(props: any): props is RxFormSingle
 }
 
 function isPropsOfStandaloneControl<Props, Value>(props: any): props is RxFormStandaloneControlProps<Value> & Props {
-  return true;
+  return props.hasOwnProperty('model');
 }
 
-function renderAsFormControlName<Props, Value, Ref extends Element>(
+function renderAsFormControlName<Props, Value, Ref>(
   props: RxFormControlNameProps & Props,
   component: ComponentWithRxFormControlContext<Props, Value, Ref>,
   ref: ForwardedRef<Ref>,
-): ReactElement | null {
+): ReactElement {
   const { formControlName, disabled, ...restProps } = props;
   const [, group] = useRxFormGroupContext<{ [key: string]: Value }>();
 
@@ -92,7 +94,7 @@ function renderAsFormControlName<Props, Value, Ref extends Element>(
   return component(restProps as unknown as Props, context);
 }
 
-function renderAsSingleControl<Props, Value, Ref extends Element>(
+function renderAsSingleControl<Props, Value, Ref>(
   props: RxFormSingleControlProps<Value>,
   component: ComponentWithRxFormControlContext<Props, Value, Ref>,
   ref: ForwardedRef<Ref>,
@@ -108,7 +110,7 @@ function renderAsSingleControl<Props, Value, Ref extends Element>(
   return component(restProps as unknown as Props, context);
 }
 
-function renderAsStandaloneControl<Props, Value, Ref extends Element>(
+function renderAsStandaloneControl<Props, Value, Ref>(
   props: RxFormStandaloneControlProps<Value>,
   component: ComponentWithRxFormControlContext<Props, Value, Ref>,
   ref: ForwardedRef<Ref>,
@@ -137,7 +139,7 @@ function renderAsStandaloneControl<Props, Value, Ref extends Element>(
   return component(restProps as unknown as Props, context);
 }
 
-function prepareContext<Value, Ref extends Element>(
+function prepareContext<Value, Ref>(
   control: RxFormControl<Value>,
   ref: ForwardedRef<Ref>,
   disabled?: boolean,

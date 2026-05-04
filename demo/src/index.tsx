@@ -9,11 +9,12 @@ import {
   RxTextArea,
   useRxFormArray,
   useRxFormGroup,
-  Validators, RxFormGroup,
+  Validators, RxFormGroup, rxFormValueAccessor,
 } from '../../src';
 import { Render$ } from 'react-rx-tools';
 import { useFunction } from 'react-cool-hooks';
 import { take, tap, timer } from 'rxjs';
+import { useState } from 'react';
 
 const root = createRoot(document.getElementById('demoTest')!);
 
@@ -29,7 +30,7 @@ interface Address {
 function DemoTest() {
   const addresses = useRxFormArray<Address>([]);
   const [formGroup, onSubmit] = useRxFormGroup({
-    email: ['', [Validators.required, Validators.email]],
+    email: ['', [Validators.required, Validators.email], []],
     firstName: ['', [Validators.required, Validators.maxLength(50)]],
     lastName: ['', [Validators.required, Validators.maxLength(50)]],
     password: ['', Validators.required],
@@ -43,8 +44,6 @@ function DemoTest() {
       tap(() => console.log(value)),
     );
   });
-
-  formGroup.controls.email
 
   const onAddAddress = useFunction(() => {
     addresses.addControl(createRxFormGroup<Address>({
@@ -60,6 +59,9 @@ function DemoTest() {
   });
 
   return <RxForm formGroup={formGroup} onSubmit={onSubmit}>
+
+    <RxInput formControl={formGroup.controls.addresses.}
+
     <InputItem formControlName="email" label="Email">
       {(name, id) => (
         <RxInput type="email" formControlName={name} id={id}/>
@@ -135,6 +137,8 @@ function DemoTest() {
         {error => error && <span>{JSON.stringify(error)}</span>}
       </RxControlError>
     </div>
+
+    <DcInput formControlName="email"/>
     <div>
       <RxFormArrayConsumer arrayName="addresses">
         {(array: RxFormArray<Address, RxFormGroup<Address>>) => array.controls.map((control, index) => (
@@ -199,3 +203,16 @@ function InputItem({ formControlName, label, children }: InputItemProps): JSX.El
     </div>
   </div>
 }
+
+
+const DcInput = rxFormValueAccessor((props, context) => {
+  const { model, setModel, valid, ref } = context;
+
+  const onChange = useFunction((e, { value }) => {
+    setModel(value);
+  })
+
+  return (
+    <Checkbox ref={ref} checked={model} onChange={onChange} error={!valid} />
+  );
+});

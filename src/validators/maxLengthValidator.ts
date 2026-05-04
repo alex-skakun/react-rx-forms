@@ -1,4 +1,4 @@
-import { RxFormControl, RxFormControlError, RxFormControlValidator } from '../core';
+import { RxFormControl, RxFormControlError, RxFormValidator } from '../core';
 
 
 export default ((length: number) => (control: RxFormControl<string>): RxFormControlError => {
@@ -9,4 +9,4 @@ export default ((length: number) => (control: RxFormControl<string>): RxFormCont
       maxLength: length,
     },
   };
-}) as (length: number) => RxFormControlValidator<string>;
+}) as (length: number) => RxFormValidator<string>;

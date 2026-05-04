@@ -1,5 +1,5 @@
 import { RefObject } from 'react';
-import { RxFormControl, RxFormControlError, RxFormControlValidator } from '../core';
+import { RxFormControl, RxFormControlError, RxFormValidator } from '../core';
 
 
 export default ((getRef: () => RefObject<Element>) => (_control: RxFormControl<any>): RxFormControlError => {
@@ -36,4 +36,4 @@ export default ((getRef: () => RefObject<Element>) => (_control: RxFormControl<a
       valueMissing: validity.valueMissing,
     },
   };
-}) as (getRef: () => RefObject<Element>) => RxFormControlValidator<any>;
+}) as (getRef: () => RefObject<Element>) => RxFormValidator<any>;

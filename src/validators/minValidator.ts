@@ -1,4 +1,4 @@
-import { RxFormControl, RxFormControlError, RxFormControlValidator } from '../core';
+import { RxFormControl, RxFormControlError, RxFormValidator } from '../core';
 
 
 export default (<T extends number | string>(minValue: T) => (control: RxFormControl<T>): RxFormControlError => {
@@ -9,4 +9,4 @@ export default (<T extends number | string>(minValue: T) => (control: RxFormCont
       minValue,
     },
   };
-}) as <T extends number | string>(min: T) => RxFormControlValidator<T>;
+}) as <T extends number | string>(min: T) => RxFormValidator<T>;

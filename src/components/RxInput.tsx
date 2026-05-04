@@ -35,7 +35,7 @@ type StringInputType =
 
 export const RxInput = rxFormValueAccessor<RxInputProps, unknown, HTMLInputElement>((props, context) => {
   const { type, value, className, onInput, onBlur, onChange, ...attrs } = fillDefaults(props, { type: 'text' });
-  const { model, ref, disabled, cssClasses, setModel, markAsTouched } = context;
+  const { model, ref, disabled, cssClasses, setModel, markAsTouched, error } = context;
 
   const onChangeHandler = useFunction((event: ChangeEvent<HTMLInputElement>) => {
     const newValue = getInputValue(event.currentTarget, type);
@@ -46,7 +46,7 @@ export const RxInput = rxFormValueAccessor<RxInputProps, unknown, HTMLInputEleme
       setModel(newValue);
     }
 
-    onChange && onChange(event);
+    onChange?.(event);
   });
 
   const onInputHandler = useFunction((event: FormEvent<HTMLInputElement>) => {
@@ -54,12 +54,12 @@ export const RxInput = rxFormValueAccessor<RxInputProps, unknown, HTMLInputEleme
       setModel(getInputValue(event.currentTarget, type));
     }
 
-    onInput && onInput(event);
+    onInput?.(event);
   });
 
   const onBlurHandler = useFunction((event: FocusEvent<HTMLInputElement>) => {
     markAsTouched();
-    onBlur && onBlur(event);
+    onBlur?.(event);
   });
 
   return <input

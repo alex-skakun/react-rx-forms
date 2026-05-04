@@ -1,4 +1,4 @@
-import { RxFormControl, RxFormControlError, RxFormControlValidator } from '../core';
+import { RxFormControl, RxFormControlError, RxFormValidator } from '../core';
 
 /**
  * Ported from Angular
@@ -8,4 +8,4 @@ const EMAIL_REGEXP = /^(?=.{1,254}$)(?=.{1,64}@)[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(
 
 export default ((control: RxFormControl<string>): RxFormControlError => {
   return EMAIL_REGEXP.test(control.value) ? null : { validatorName: 'email' };
-}) as RxFormControlValidator<string>;
+}) as RxFormValidator<string>;

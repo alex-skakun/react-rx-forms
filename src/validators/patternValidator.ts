@@ -1,4 +1,4 @@
-import { RxFormControl, RxFormControlError, RxFormControlValidator } from '../core';
+import { RxFormControl, RxFormControlError, RxFormValidator } from '../core';
 
 
 export default ((pattern: RegExp) => (control: RxFormControl<string>): RxFormControlError => {
@@ -6,4 +6,4 @@ export default ((pattern: RegExp) => (control: RxFormControl<string>): RxFormCon
     validatorName: 'pattern',
     details: { actualValue: control.value },
   };
-}) as (pattern: RegExp) => RxFormControlValidator<string>;
+}) as (pattern: RegExp) => RxFormValidator<string>;

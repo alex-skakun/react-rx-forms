@@ -1,4 +1,4 @@
-export * from './trigger';
+export * from './stateTrigger';
 export * from './fillDefaults';
 export * from './classNames';
 export * from './shareAndSubscribe';

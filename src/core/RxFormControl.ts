@@ -15,8 +15,8 @@ import { isEmptyInputValue, isNonEmptyArray } from 'value-guards';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
 import { RxFormControlAsyncValidator } from './RxFormControlAsyncValidator';
 import { RxFormControlError } from './RxFormControlError';
-import { RxFormControlValidator } from './RxFormControlValidator';
-import { shareAndSubscribe, trigger } from '../helpers';
+import { RxFormValidator } from './RxFormValidator';
+import { shareAndSubscribe, stateTrigger } from '../helpers';
 
 
 export interface RxFormControlState<Value> {
@@ -34,7 +34,7 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
   #touched: boolean = false;
   #error: RxFormControlError = null;
   #valid: boolean = true;
-  readonly #validatorsSubject: BehaviorSubject<Array<RxFormControlValidator<Value>>>;
+  readonly #validatorsSubject: BehaviorSubject<Array<RxFormValidator<Value>>>;
   readonly #asyncValidatorsSubject: BehaviorSubject<Array<RxFormControlAsyncValidator<Value>>>;
   readonly #valueSubject: BehaviorSubject<Value>;
   readonly #touchedSubject = new BehaviorSubject<boolean>(false);
@@ -48,7 +48,7 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
 
   constructor(
     initialValue: Value,
-    validators: Array<RxFormControlValidator<Value>> = [],
+    validators: Array<RxFormValidator<Value>> = [],
     asyncValidators: Array<RxFormControlAsyncValidator<Value>> = [],
   ) {
     super();
@@ -87,7 +87,7 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
     return this.#valid;
   }
 
-  get #validators(): Array<RxFormControlValidator<Value>> {
+  get #validators(): Array<RxFormValidator<Value>> {
     return this.#validatorsSubject.getValue();
   }
 
@@ -95,14 +95,14 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
     return this.#asyncValidatorsSubject.getValue();
   }
 
-  @trigger()
+  @stateTrigger()
   setValue(value: Value): void {
     this.#valueSubject.next(value);
   }
 
   reset(initialValue?: Value): void;
 
-  @trigger()
+  @stateTrigger()
   reset(...args: [initialValue?: Value]): void {
     if (isNonEmptyArray(args)) {
       this.#initialValue = args[0];
@@ -111,37 +111,37 @@ export class RxFormControl<Value> extends RxFormAbstractControl<Value> {
     this.#valueSubject.next(this.#initialValue);
   }
 
-  @trigger()
+  @stateTrigger()
   markAsTouched(): void {
     this.#touchedSubject.next(true);
   }
 
-  @trigger()
+  @stateTrigger()
   markAsUntouched(): void {
     this.#touchedSubject.next(false);
   }
 
-  @trigger()
-  addValidator(validator: RxFormControlValidator<Value>): void {
+  @stateTrigger()
+  addValidator(validator: RxFormValidator<Value>): void {
     this.#validatorsSubject.next(addValidatorIntoCollection(this.#validators, validator));
   }
 
-  @trigger()
-  removeValidator(validator: RxFormControlValidator<Value>): void {
+  @stateTrigger()
+  removeValidator(validator: RxFormValidator<Value>): void {
     this.#validatorsSubject.next(removeValidatorFromCollection(this.#validators, validator));
   }
 
-  @trigger()
+  @stateTrigger()
   addAsyncValidator(validator: RxFormControlAsyncValidator<Value>): void {
     this.#asyncValidatorsSubject.next(addValidatorIntoCollection(this.#asyncValidators, validator));
   }
 
-  @trigger()
+  @stateTrigger()
   removeAsyncValidator(validator: RxFormControlAsyncValidator<Value>): void {
     this.#asyncValidatorsSubject.next(removeValidatorFromCollection(this.#asyncValidators, validator));
   }
 
-  #runValidators(validators: Array<RxFormControlValidator<Value>>): RxFormControlError {
+  #runValidators(validators: Array<RxFormValidator<Value>>): RxFormControlError {
     for (const validator of validators) {
       const validatorResult = validator(this);
 

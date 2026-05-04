@@ -5,7 +5,7 @@ import { Validators } from '../validators';
 
 
 export type RxFormGroupInit<Group, ControlName extends keyof Group> = {
-  [P in ControlName]: RxFormControlInit<Group[P]> | RxFormAbstractControl<Group[P]>;
+  [P in ControlName]: RxFormControlInit<Group[P]> | RxFormAbstractControl<Group[P], any>;
 };
 
 export function createRxFormGroup<Group, ControlName extends keyof Group = keyof Group>(
@@ -27,13 +27,3 @@ function createControlsMap<Group, ControlName extends keyof Group>(
     return controls;
   }, {} as ControlsMap<Group, ControlName>);
 }
-
-const fg = createRxFormGroup({
-  test: '',
-  foo: [0, [Validators.max(10), Validators.min(0)]],
-  data: createRxFormGroup({
-    baz: false,
-  }),
-});
-
-fg.controls.test.;
