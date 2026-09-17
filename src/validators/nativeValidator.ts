@@ -1,8 +1,8 @@
 import { RefObject } from 'react';
-import { RxFormControl, RxFormControlError, RxFormValidator } from '../core';
+import { RxFormControl, RxFormValidatorResult, RxFormSyncValidator } from '../core';
 
 
-export default ((getRef: () => RefObject<Element>) => (_control: RxFormControl<any>): RxFormControlError => {
+export default ((getRef: () => RefObject<Element>) => (_control: RxFormControl<any>): RxFormValidatorResult => {
   const current = getRef().current;
   const isInput = [
     HTMLInputElement,
@@ -36,4 +36,4 @@ export default ((getRef: () => RefObject<Element>) => (_control: RxFormControl<a
       valueMissing: validity.valueMissing,
     },
   };
-}) as (getRef: () => RefObject<Element>) => RxFormValidator<any>;
+}) as (getRef: () => RefObject<Element>) => RxFormSyncValidator<any>;

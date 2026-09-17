@@ -7,7 +7,7 @@ import {
   rxFormValueAccessor,
 } from '../core';
 import { classNames } from '../helpers';
-import { CustomComponent } from '../types/CustomComponent';
+import { CustomComponent } from '../core/types/CustomComponent';
 
 
 type RxTextAreaProps = Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'value' | 'disabled'>;

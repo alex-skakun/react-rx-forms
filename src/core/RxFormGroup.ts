@@ -1,226 +1,221 @@
-import {
-  asapScheduler,
-  audit,
-  combineLatest,
-  distinctUntilChanged,
-  map,
-  Observable,
-  scheduled,
-  startWith,
-  tap,
-} from 'rxjs';
+import { objectEntries } from 'react-cool-utils';
+import { distinctUntilRecordChanged } from 'react-rx-tools';
+import { BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable, sample, switchMap } from 'rxjs';
+import { isFunction } from 'value-guards';
+import { ControlSampler, ControlTrigger } from './constants';
+import { samplerTrigger } from './decorators';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
-import { RxFormControlError } from './RxFormControlError';
-import { RxFormErrors } from './RxFormErrors';
-import { shareAndSubscribe } from '../helpers';
+import { GET_SAMPLER, INIT_DISABLED_SOURCE, INIT_ERRORS_SOURCE, INIT_TOUCHED_SOURCE, INIT_VALUE_SOURCE, SET_PARENT } from './tokens';
+import { type RxFormAbstractControlOptions, RxFormErrors, ValueOfControl } from './types';
+import { createObjectFromEntries } from './utils';
 
+export type ControlsRecord = Record<string, RxFormAbstractControl<any>>;
+export type ControlsMap = Map<string, RxFormAbstractControl<unknown>>;
+export type GroupValue<Controls extends ControlsRecord> = {
+  [P in keyof Controls]: ValueOfControl<Controls[P]>;
+}
 
-export type ControlsMap<Group extends Record<string, any>, ControlName extends keyof Group> = {
-  [P in ControlName]: RxFormAbstractControl<Group[P]>;
-};
+export class RxFormGroup<
+  const Controls extends ControlsRecord
+> extends RxFormAbstractControl<GroupValue<Controls>> {
+  readonly #controlsMapSubject: BehaviorSubject<ControlsMap>;
+  #initialValue: GroupValue<Controls>;
 
-export type RxFormGroupState<Group> = {
-  value: Group;
-  dirty: boolean;
-  touched: boolean;
-  valid: boolean;
-  error: RxFormErrors<Group>;
-};
+  constructor(
+    controls?: Controls,
+    options?: RxFormAbstractControlOptions<NoInfer<GroupValue<Controls>>>,
+  ) {
+    const controlsMap = new Map(controls ? objectEntries(controls) : []);
+    const initialValue = controlsMap.entries().reduce((value, [controlName, control]) => {
+      Reflect.set(value, controlName, control.value);
+      return value;
+    }, {} as GroupValue<Controls>);
 
-export class RxFormGroup<Group, ControlName extends keyof Group = keyof Group> extends RxFormAbstractControl<Group> {
-  #initialValue: Group;
-  #value: Group;
-  #dirty: boolean;
-  #touched: boolean;
-  #valid: boolean;
-  #error: RxFormErrors<Group>;
+    super(initialValue, options);
 
-  readonly value$: Observable<Group>;
-  readonly dirty$: Observable<boolean>;
-  readonly touched$: Observable<boolean>;
-  readonly valid$: Observable<boolean>;
-  readonly error$: Observable<RxFormErrors<Group>>;
-  readonly state$: Observable<RxFormGroupState<Group>>;
-  readonly controls: Readonly<ControlsMap<Group, ControlName>>;
+    this.#controlsMapSubject = new BehaviorSubject(controlsMap);
+    this.#initialValue = initialValue;
 
-  constructor(controls: ControlsMap<Group, ControlName>) {
-    super();
-
-    const controlsEntries = Object.entries(controls) as Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>;
-    this.controls = controls;
-
-    this.value$ = this.#createValue(controlsEntries);
-    this.dirty$ = this.#createDirty(controlsEntries);
-    this.touched$ = this.#createTouched(controlsEntries);
-    this.error$ = this.#createError(controlsEntries);
-    this.valid$ = this.#createValid(controlsEntries);
-    this.state$ = this.#createState();
-
-    this.#initialValue = this.value;
-    this.#value = this.value;
-    this.#dirty = this.dirty;
-    this.#touched = this.touched;
-    this.#error = this.error;
-    this.#valid = this.valid;
-  }
-
-  get value(): Group {
-    return this.#value;
-  }
-
-  get dirty(): boolean {
-    return this.#dirty;
-  }
-
-  get touched(): boolean {
-    return this.#touched;
-  }
-
-  get valid(): boolean {
-    return this.#valid;
-  }
-
-  get error(): RxFormErrors<Group> {
-    return this.#error;
-  }
-
-  * controlsIterator(): IterableIterator<RxFormAbstractControl<Group[ControlName]>> {
-    for (const control of Object.values(this.controls)) {
-      yield control as RxFormAbstractControl<Group[ControlName]>;
+    for (const control of this) {
+      control[SET_PARENT](this);
     }
   }
 
-  markAsTouched(): void {
-    for (const control of this.controlsIterator()) {
+  get #controlsMap(): ControlsMap {
+    return this.#controlsMapSubject.getValue();
+  }
+
+  getControl<const ControlName extends keyof Controls>(controlName: ControlName): Controls[ControlName] {
+    return this.#controlsMap.get(controlName as string) as Controls[ControlName];
+  }
+
+  @samplerTrigger({
+    trigger: ControlTrigger.VALUE,
+    override: [],
+  })
+  reset(initialValue?: GroupValue<Controls>): void {
+    this.#initialValue = initialValue ?? this.#initialValue;
+
+    for (const [controlName, control] of this.controlEntries()) {
+      control.reset(this.#initialValue[controlName]);
+    }
+  }
+
+  @samplerTrigger({
+    trigger: ControlTrigger.VALUE,
+    override: [],
+  })
+  setValue(value: GroupValue<Controls>): this {
+    for (const [controlName, control] of this.controlEntries()) {
+      control.setValue(value[controlName]);
+    }
+
+    return this;
+  }
+
+  @samplerTrigger({
+    trigger: ControlTrigger.VALUE,
+    override: [],
+  })
+  patchValue(patch: Partial<GroupValue<Controls>>): this {
+    const currentControls = this.#controlsMap;
+
+    for (const [controlName, controlValue] of objectEntries(patch)) {
+      currentControls.get(controlName as string)?.setValue(controlValue);
+    }
+
+    return this;
+  }
+
+  @samplerTrigger({
+    trigger: ControlTrigger.DISABLED,
+    override: [],
+  })
+  disable(): this {
+    for (const control of this) {
+      control.disable();
+    }
+
+    return this;
+  }
+
+  @samplerTrigger({
+    trigger: ControlTrigger.DISABLED,
+    override: [],
+  })
+  enable(): this {
+    for (const control of this) {
+      control.enable();
+    }
+
+    return this;
+  }
+
+  @samplerTrigger({
+    trigger: ControlTrigger.TOUCHED,
+    override: [],
+  })
+  markAsTouched(): this {
+    for (const control of this) {
       control.markAsTouched();
     }
+
+    return this;
   }
 
-  markAsUntouched(): void {
-    for (const control of this.controlsIterator()) {
+  @samplerTrigger({
+    trigger: ControlTrigger.TOUCHED,
+    override: [],
+  })
+  markAsUntouched(): this {
+    for (const control of this) {
       control.markAsUntouched();
     }
+
+    return this;
   }
 
-  reset(initialValue?: Group): void {
-    if (initialValue !== undefined) {
-      this.#initialValue = initialValue;
-    }
+  controlEntries<Result>(mapFn: (control: RxFormAbstractControl<unknown>, controlName: string) => Result): Generator<Result, void, void>;
+  controlEntries(): Generator<[string, RxFormAbstractControl<unknown>], void, void>;
 
-    for (const [controlName, controlValue] of Object.entries(this.#initialValue)) {
-      this.controls[controlName as ControlName].reset(controlValue);
-    }
-  }
+  * controlEntries<Result = [string, RxFormAbstractControl<unknown>]>(
+    mapFn?: (control: RxFormAbstractControl<unknown>, controlName: string) => Result,
+  ): Generator<Result, void, void> {
+    for (const entry of this.#controlsMap) {
+      if (isFunction(mapFn)) {
+        yield mapFn(entry[1], entry[0]);
+      }
 
-  setValue(value: Group): void {
-    this.patchValue(value);
-  }
-
-  patchValue(value: Partial<Group>): void {
-    for (const [controlName, controlValue] of Object.entries(value)) {
-      this.controls[controlName as ControlName].setValue(controlValue);
+      yield entry as Result;
     }
   }
 
-  #createValue(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<Group> {
-    const [value$, valueSubscription] = shareAndSubscribe(
-      combineLatest(entries.map(([controlName, control]) => {
-        return control.value$.pipe(map(value => [controlName, value]));
-      }))
-        .pipe(
-          map(entries => Object.fromEntries(entries) as Group),
-          tap(value => this.#value = value),
-        ),
-    );
-    this.addSubscription(valueSubscription);
-
-    return value$;
+  * [Symbol.iterator](): Generator<RxFormAbstractControl<unknown>, void, void> {
+    yield* this.#controlsMap.values();
   }
 
-  #createDirty(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<boolean> {
-    const [dirty$, dirtySubscription] = shareAndSubscribe(
-      combineLatest(entries.map(([, control]) => control.dirty$))
-        .pipe(
-          map(dirtyValues => dirtyValues.every(Boolean)),
-          distinctUntilChanged(),
-          tap(dirty => this.#dirty = dirty),
-        ),
+  protected [INIT_VALUE_SOURCE](): Observable<GroupValue<Controls>> {
+    return this.#controlsMapSubject.pipe(
+      switchMap((controlsMap) => combineLatest(
+        createObjectFromEntries(controlsMap, ({ value$ }) => value$),
+      ) as Observable<GroupValue<Controls>>),
+      sample(this[GET_SAMPLER](ControlSampler.VALUE)),
+      distinctUntilRecordChanged(),
     );
-    this.addSubscription(dirtySubscription);
-
-    return dirty$;
   }
 
-  #createTouched(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<boolean> {
-    const [touched$, touchedSubscription] = shareAndSubscribe(
-      combineLatest(entries.map(([, control]) => control.touched$))
-        .pipe(
-          map(touchedValues => touchedValues.every(Boolean)),
-          distinctUntilChanged(),
-          tap(touched => this.#touched = touched),
-        ),
+  protected [INIT_DISABLED_SOURCE](): Observable<boolean> {
+    return this.#controlsMapSubject.pipe(
+      switchMap((controlsMap) => combineLatest(
+        Array.from(controlsMap.values(), ({ disabled$ }) => disabled$),
+      )),
+      sample(this[GET_SAMPLER](ControlSampler.DISABLED)),
+      map((statuses) => statuses.every(Boolean)),
+      distinctUntilChanged(),
     );
-    this.addSubscription(touchedSubscription);
-
-    return touched$;
   }
 
-  #createError(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<RxFormErrors<Group>> {
-    const [error$, errorSubscription] = shareAndSubscribe(
-      combineLatest(entries.map(([controlName, control]) => {
-        return (control.error$ as Observable<RxFormControlError | RxFormErrors>).pipe(
-          map(error => [controlName, error]));
-      }))
-        .pipe(
-          map(errorValues => {
-            const filteredEntries = errorValues.filter(([, error]) => error !== null);
-
-            return filteredEntries.length ? Object.fromEntries(filteredEntries) as RxFormErrors<Group> : null;
-          }),
-          distinctUntilChanged(),
-          tap(errors => this.#error = errors),
-        ),
+  protected [INIT_TOUCHED_SOURCE](): Observable<boolean> {
+    return this.#controlsMapSubject.pipe(
+      switchMap((controlsMap) => combineLatest(
+        Array.from(controlsMap.values(), ({ touched$ }) => touched$),
+      )),
+      sample(this[GET_SAMPLER](ControlSampler.TOUCHED)),
+      map((statuses) => statuses.some(Boolean)),
+      distinctUntilChanged(),
     );
-    this.addSubscription(errorSubscription);
-
-    return error$;
   }
 
-  #createValid(entries: Array<[ControlName, RxFormAbstractControl<Group[ControlName]>]>): Observable<boolean> {
-    const [valid$, validSubscription] = shareAndSubscribe(
-      combineLatest(entries.map(([, control]) => control.valid$))
-        .pipe(
-          map(validValues => validValues.every(Boolean)),
-          distinctUntilChanged(),
-          tap(valid => this.#valid = valid),
-        ),
-    );
-    this.addSubscription(validSubscription);
-
-    return valid$;
-  }
-
-  #createState(): Observable<RxFormGroupState<Group>> {
-    const [state$, stateSubscription] = shareAndSubscribe(
-      combineLatest([
-        this.value$, this.dirty$, this.touched$, this.valid$, this.error$,
-      ]).pipe(
-        audit(() => scheduled([null], asapScheduler)),
-        map(([value, dirty, touched, valid, error]): RxFormGroupState<Group> => {
-          return { value, dirty, touched, valid, error };
-        }),
-        startWith({
-          value: this.value,
-          dirty: this.dirty,
-          touched: this.touched,
-          valid: this.valid,
-          error: this.error,
-        }),
+  protected [INIT_ERRORS_SOURCE](validatorsResult$: Observable<RxFormErrors>): Observable<RxFormErrors> {
+    return combineLatest({
+      validatorsResult: validatorsResult$,
+      controlsErrors: combineLatest(
+        Object.fromEntries(this.controlEntries(({ errors$ }, controlName) => [controlName, errors$])),
+      ).pipe(
+        map((controlsErrors) => collectControlsErrors(controlsErrors)),
+        distinctUntilChanged(),
       ),
+    }).pipe(
+      map(({ validatorsResult, controlsErrors }) => (
+        validatorsResult || controlsErrors
+          ? { ...validatorsResult, controlsErrors }
+          : null
+      )),
+      distinctUntilChanged(),
     );
-    this.addSubscription(stateSubscription);
+  }
+}
 
-    return state$;
+function collectControlsErrors(rawErrors: NonNullable<RxFormErrors>): RxFormErrors {
+  let errors = null;
+
+  for (const [controlName, possibleError] of objectEntries(rawErrors)) {
+    if (possibleError) {
+      errors = Object.assign(errors || {}, {
+        [controlName]: possibleError,
+      });
+    }
   }
 
+  return errors;
 }

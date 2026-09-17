@@ -1,24 +1,35 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
-    "target": "ES2017",
-    "moduleResolution": "Node",
-    "moduleDetection": "force",
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
+    "exactOptionalPropertyTypes": true,
     "esModuleInterop": true,
     "sourceMap": true,
     "declaration": false,
+    "moduleResolution": "Node",
     "importHelpers": true,
-    "jsx": "react-jsx",
-    "strict": true,
-    "experimentalDecorators": true
+    "target": "ES2020",
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx"
   },
   "exclude": [
-    "node_modules",
-    "**/*.spec.tsx",
-    "**/*.spec.ts"
+    "node_modules"
   ],
-  "include": [
-    "src"
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    },
+    {
+      "path": "./tsconfig.demo.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    },
+    {
+      "path": "./tsconfig.tools.json"
+    }
   ]
 }

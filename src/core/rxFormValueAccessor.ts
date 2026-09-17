@@ -5,7 +5,7 @@ import { classNames } from '../helpers';
 import { useRxFormControl, useRxFormGroupContext } from '../hooks';
 import { Validators } from '../validators';
 import { RxFormControl, RxFormControlState } from './RxFormControl';
-import { RxFormControlError } from './RxFormControlError';
+import { RxFormValidatorResult } from './types/RxFormValidatorResult';
 import { useFunction } from 'react-cool-hooks';
 
 
@@ -22,7 +22,7 @@ export type RxFormSingleControlProps<Value> = {
 export type RxFormStandaloneControlProps<Value> = {
   model: Value;
   modelChange?: (value: Value) => void;
-  onError?: (error: RxFormControlError) => void;
+  onError?: (error: RxFormValidatorResult) => void;
   disabled?: boolean;
 };
 
@@ -120,7 +120,7 @@ function renderAsStandaloneControl<Props, Value, Ref>(
   const internalOnModelChange = useFunction((value: Value): void => {
     modelChange?.(value);
   });
-  const internalOnError = useFunction((error: RxFormControlError): void => {
+  const internalOnError = useFunction((error: RxFormValidatorResult): void => {
     onError?.(error);
   });
 
@@ -144,7 +144,7 @@ function prepareContext<Value, Ref>(
   ref: ForwardedRef<Ref>,
   disabled?: boolean,
 ): RxFormControlContextType<Value, Ref> {
-  const { value: model, dirty, touched, error, valid } = useObservable(control.state$)!;
+  const { value: model, dirty, touched, errors, valid } = useObservable(control.state$)!;
   const setModel = useFunction((newModel: Value) => control.setValue(newModel));
   const markAsTouched = useFunction(() => control.markAsTouched());
 
@@ -152,14 +152,14 @@ function prepareContext<Value, Ref>(
     model,
     dirty,
     touched,
-    error,
+    errors,
     valid,
     ref,
     disabled: !!disabled,
     cssClasses: getCssClasses({ dirty, touched, valid }),
     setModel,
     markAsTouched,
-  }), [model, dirty, touched, error, valid, disabled, ref]);
+  }), [model, dirty, touched, errors, valid, disabled, ref]);
 }
 
 function getCssClasses<Value>(controlState: Partial<RxFormControlState<Value>>): string {

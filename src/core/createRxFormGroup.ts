@@ -1,6 +1,6 @@
 import { createRxFormControl, RxFormControlInit } from './createRxFormControl';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
-import { ControlsMap, RxFormGroup } from './RxFormGroup';
+import { ControlsRecord, RxFormGroup } from './RxFormGroup';
 import { Validators } from '../validators';
 
 
@@ -16,7 +16,7 @@ export function createRxFormGroup<Group, ControlName extends keyof Group = keyof
 
 function createControlsMap<Group, ControlName extends keyof Group>(
   formGroupInit: RxFormGroupInit<Group, ControlName>,
-): ControlsMap<Group, ControlName> {
+): ControlsRecord<Group, ControlName> {
   return Object.entries(formGroupInit).reduce((controls, [controlName, controlInit]) => {
     if (controlInit instanceof RxFormAbstractControl) {
       controls[controlName as ControlName] = controlInit;
@@ -25,5 +25,5 @@ function createControlsMap<Group, ControlName extends keyof Group>(
     }
 
     return controls;
-  }, {} as ControlsMap<Group, ControlName>);
+  }, {} as ControlsRecord<Group, ControlName>);
 }

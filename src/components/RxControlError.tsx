@@ -1,18 +1,18 @@
 import { ReactElement, ReactNode } from 'react';
 import { Render$ } from 'react-rx-tools';
-import { RxFormControl, RxFormControlError } from '../core';
+import { RxFormControl, RxFormValidatorResult } from '../core';
 import { useRxFormGroupContext } from '../hooks';
-import { CustomComponent } from '../types';
+import { CustomComponent } from '../core/types';
 
 
 type RxControlErrorNameProps = {
   formControlName: string;
-  children: (error: RxFormControlError) => ReactNode;
+  children: (error: RxFormValidatorResult) => ReactNode;
 };
 
 type RxControlErrorInstanceProps<T> = {
   formControl: RxFormControl<T>;
-  children: (error: RxFormControlError) => ReactNode;
+  children: (error: RxFormValidatorResult) => ReactNode;
 };
 
 type RxControlErrorProps<T = unknown> = RxControlErrorNameProps | RxControlErrorInstanceProps<T>;

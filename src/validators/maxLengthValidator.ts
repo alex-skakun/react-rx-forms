@@ -1,7 +1,7 @@
-import { RxFormControl, RxFormControlError, RxFormValidator } from '../core';
+import { RxFormControl, RxFormValidatorResult, RxFormSyncValidator } from '../core';
 
 
-export default ((length: number) => (control: RxFormControl<string>): RxFormControlError => {
+export default ((length: number) => (control: RxFormControl<string>): RxFormValidatorResult => {
   return control.value.length <= length ? null : {
     validatorName: 'maxLength',
     details: {
@@ -9,4 +9,4 @@ export default ((length: number) => (control: RxFormControl<string>): RxFormCont
       maxLength: length,
     },
   };
-}) as (length: number) => RxFormValidator<string>;
+}) as (length: number) => RxFormSyncValidator<string>;

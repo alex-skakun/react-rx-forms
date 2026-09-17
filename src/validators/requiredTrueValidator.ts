@@ -1,6 +1,6 @@
-import { RxFormControl, RxFormControlError, RxFormValidator } from '../core';
+import { RxFormControl, RxFormValidatorResult, RxFormSyncValidator } from '../core';
 
 
-export default ((control: RxFormControl<boolean>): RxFormControlError => {
+export default ((control: RxFormControl<boolean>): RxFormValidatorResult => {
   return control.value ? null : { validatorName: 'requiredTrue' };
-}) as RxFormValidator<boolean>;
+}) as RxFormSyncValidator<boolean>;

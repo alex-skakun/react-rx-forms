@@ -18,7 +18,7 @@ import {
 } from '../core';
 import { classNames, fillDefaults } from '../helpers';
 import { useFunction } from 'react-cool-hooks';
-import { CustomComponent } from '../types/CustomComponent';
+import { CustomComponent } from '../core/types/CustomComponent';
 
 
 type RxSelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'value' | 'disabled'>;

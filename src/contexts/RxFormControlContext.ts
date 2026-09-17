@@ -1,11 +1,11 @@
 import { createContext, ForwardedRef } from 'react';
-import { RxFormControlError } from '../core';
+import { RxFormValidatorResult } from '../core';
 
 
 export type RxFormControlContextType<V = any, R = Element> = {
   model: V;
   ref: ForwardedRef<R>;
-  error: RxFormControlError | null;
+  error: RxFormValidatorResult | null;
   valid: boolean;
   dirty: boolean;
   touched: boolean;

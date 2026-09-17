@@ -1,6 +1,6 @@
 import { FunctionComponent } from 'react';
 
-import { CustomComponent } from '../types';
+import { CustomComponent } from '../core/types';
 
 
 export function customComponent<T extends (...args: any[]) => any = FunctionComponent>(

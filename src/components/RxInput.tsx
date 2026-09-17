@@ -7,7 +7,7 @@ import {
   rxFormValueAccessor,
 } from '../core';
 import { classNames, fillDefaults } from '../helpers';
-import { CustomComponent } from '../types';
+import { CustomComponent } from '../core/types';
 
 
 type RxInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, 'disabled'>;

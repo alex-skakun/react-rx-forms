@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "bun",
+      "node"
+    ],
+    "lib": ["ESNext"],
+  },
+  "exclude": [
+    "node_modules",
+    "setupTests.ts",
+    "tools/**/*.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.spec.tsx"
+  ],
+  "include": [
+    "tools/**/*.ts"
+  ]
+}

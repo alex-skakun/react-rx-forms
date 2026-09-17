@@ -2,7 +2,7 @@ import { ReactNode, useMemo } from 'react';
 import { isFunction } from 'value-guards';
 import { useObservable } from 'react-rx-tools';
 
-import type { CustomComponent } from '../types';
+import type { CustomComponent } from '../core/types';
 import { RxFormGroupContext } from '../contexts';
 import { RxFormGroup, RxFormGroupState } from '../core';
 import { useRxFormGroupContext } from '../hooks';

@@ -1,7 +1,7 @@
 import { BehaviorSubject, combineLatest, distinctUntilChanged, map, Observable, of, switchMap, tap } from 'rxjs';
 import { RxFormAbstractControl } from './RxFormAbstractControl';
-import { RxFormControlError } from './RxFormControlError';
-import { RxFormErrors } from './RxFormErrors';
+import { RxFormValidatorResult } from './types/RxFormValidatorResult';
+import { RxFormControlErrors } from './RxFormErrors';
 import { shareAndSubscribe } from '../helpers';
 
 
@@ -14,13 +14,13 @@ export class RxFormArray<Value, Control extends RxFormAbstractControl<Value> = R
   #dirty: boolean;
   #touched: boolean;
   #valid: boolean;
-  #error: RxFormErrors<Array<Value>>;
+  #error: RxFormControlErrors<Array<Value>>;
 
   readonly value$: Observable<Array<Value>>;
   readonly dirty$: Observable<boolean>;
   readonly touched$: Observable<boolean>;
   readonly valid$: Observable<boolean>;
-  readonly error$: Observable<RxFormErrors<Array<Value>>>;
+  readonly error$: Observable<RxFormControlErrors<Array<Value>>>;
 
   constructor(controls: ControlsArray<Value, Control> = []) {
     super();
@@ -56,7 +56,7 @@ export class RxFormArray<Value, Control extends RxFormAbstractControl<Value> = R
     return this.#valid;
   }
 
-  get error(): RxFormErrors<Array<Value>> {
+  get error(): RxFormControlErrors<Array<Value>> {
     return this.#error;
   }
 
@@ -162,18 +162,18 @@ export class RxFormArray<Value, Control extends RxFormAbstractControl<Value> = R
     return touched$;
   }
 
-  #createError(): Observable<RxFormErrors<Array<Value>>> {
+  #createError(): Observable<RxFormControlErrors<Array<Value>>> {
     const [error$, errorSubscription] = shareAndSubscribe(
       this.#controlsSubject.pipe(
         switchMap(controls => {
           return controls.length
-            ? combineLatest(controls.map(control => control.error$ as Observable<RxFormControlError | RxFormErrors>))
+            ? combineLatest(controls.map(control => control.error$ as Observable<RxFormValidatorResult | RxFormControlErrors>))
             : of([null]);
         }),
-        map(errorValues => errorValues.reduce<RxFormErrors<Array<Value>>>((errors, controlError, index) => {
+        map(errorValues => errorValues.reduce<RxFormControlErrors<Array<Value>>>((errors, controlError, index) => {
           if (controlError !== null) {
-            errors = (errors ?? {}) as NonNullable<RxFormErrors<Array<Value>>>;
-            errors[index] = controlError as NonNullable<RxFormControlError>;
+            errors = (errors ?? {}) as NonNullable<RxFormControlErrors<Array<Value>>>;
+            errors[index] = controlError as NonNullable<RxFormValidatorResult>;
           }
 
           return errors;

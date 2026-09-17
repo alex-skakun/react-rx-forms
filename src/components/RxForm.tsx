@@ -13,7 +13,7 @@ import { isFunction } from 'value-guards';
 import { useFunction, useOnce } from 'react-cool-hooks';
 import { useObservable } from 'react-rx-tools';
 
-import type { CustomComponent } from '../types';
+import type { CustomComponent } from '../core/types';
 import { RxFormContext, RxFormContextState } from '../contexts';
 import { RxFormGroup } from '../core';
 import { classNames } from '../helpers';
